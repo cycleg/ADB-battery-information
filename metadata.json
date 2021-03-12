@@ -1,0 +1,10 @@
+{
+    "name" : "ADB battery information",
+    "description" : "Shows battery percentage of connected via ADB device",
+    "shell-version" : [
+        "3.36"
+    ],
+    "url" : "",
+    "uuid" : "adb_bp@gnome_extensions.github.com",
+    "version" : 1.0
+}
