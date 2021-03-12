@@ -4,7 +4,7 @@
     "shell-version" : [
         "3.36"
     ],
-    "url" : "",
+    "url" : "https://github.com/ilihydrogen/ADB-battery-information",
     "uuid" : "adb_bp@gnome_extensions.github.com",
     "version" : 1.0
 }
