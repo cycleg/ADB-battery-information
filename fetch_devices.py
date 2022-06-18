@@ -5,7 +5,7 @@ import io
 import json
 import sys
 import urllib.request
-from http import HTTPStatus
+from urllib.error import HTTPError
 
 DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv'
 DEVICES_DB_FILE = 'devices.json'
@@ -21,9 +21,10 @@ class DeviceDbCsvDialect(csv.Dialect):
 
 if __name__ == "__main__":
     data = dict()
-    response = urllib.request.urlopen(DEVICES_DB_URL)
-    if response.status != HTTPStatus.OK:
-        print('HTTP: {} {}'.format(response.status, response.reason))
+    try:
+        response = urllib.request.urlopen(DEVICES_DB_URL)
+    except HTTPError as e:
+        print(e)
         sys.exit(1)
     with io.TextIOWrapper(response, encoding='utf-16') as fin:
         reader = csv.reader(fin, dialect=DeviceDbCsvDialect())
