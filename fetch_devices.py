@@ -1,10 +1,14 @@
 #!/usr/bin/python3
 
 import csv
+import io
 import json
 import sys
+import urllib.request
+from http import HTTPStatus
 
-# https://storage.googleapis.com/play_public/supported_devices.csv
+DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv'
+DEVICES_DB_FILE = 'devices.json'
 
 
 class DeviceDbCsvDialect(csv.Dialect):
@@ -16,12 +20,12 @@ class DeviceDbCsvDialect(csv.Dialect):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print('Usage: {} <file CSV>'.format(sys.argv[0]))
-        sys.exit(1)
-    csv_file = sys.argv[1]
     data = dict()
-    with open(csv_file, 'r', encoding='utf-16') as fin:
+    response = urllib.request.urlopen(DEVICES_DB_URL)
+    if response.status != HTTPStatus.OK:
+        print('HTTP: {} {}'.format(response.status, response.reason))
+        sys.exit(1)
+    with io.TextIOWrapper(response, encoding='utf-16') as fin:
         reader = csv.reader(fin, dialect=DeviceDbCsvDialect())
         # первая строка
         # Retail Branding,Marketing Name,Device,Model
@@ -34,4 +38,5 @@ if __name__ == "__main__":
               'device': row[2],
             }
             row = next(reader, list())
-    print(json.dumps(data, indent=2))
+    with open(DEVICES_DB_FILE, 'w', encoding='utf-8') as fout:
+        json.dump(data, fout, indent=2)
