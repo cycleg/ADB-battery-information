@@ -174,6 +174,16 @@
     "name": "Ai-ES1059",
     "device": "Ai-ES1059"
   },
+  "X20": {
+    "brand": "bontel",
+    "name": "X20",
+    "device": "X20"
+  },
+  "X5": {
+    "brand": "Stylo",
+    "name": "X5",
+    "device": "X5"
+  },
   "BUZZ 3": {
     "brand": "ACE (Global)",
     "name": "BUZZ 3",
@@ -770,12 +780,12 @@
     "device": "SURGE_AA_787_S"
   },
   "R3": {
-    "brand": "Olimpo",
+    "brand": "Vision Technology",
     "name": "Android TV",
     "device": "R3"
   },
   "R4": {
-    "brand": "Olimpo",
+    "brand": "Vision Technology",
     "name": "Android TV",
     "device": "R4"
   },
@@ -848,6 +858,11 @@
     "brand": "AT&T",
     "name": "U319AA",
     "device": "U319AA"
+  },
+  "U626AA": {
+    "brand": "AT&T",
+    "name": "U626AA",
+    "device": "U626AA"
   },
   "U705AA": {
     "brand": "AT&T",
@@ -1363,11 +1378,6 @@
     "brand": "Accent",
     "name": "TANK_P55",
     "device": "TANK_P55"
-  },
-  "X20": {
-    "brand": "bontel",
-    "name": "X20",
-    "device": "X20"
   },
   "fm502": {
     "brand": "Access",
@@ -10849,6 +10859,11 @@
     "name": "BL65",
     "device": "Bmobile_BL65_OM"
   },
+  "BL65_TG": {
+    "brand": "BMobile",
+    "name": "BL65",
+    "device": "Bmobile_BL65_TG"
+  },
   "Bella": {
     "brand": "BMobile",
     "name": "Bella",
@@ -16284,11 +16299,6 @@
     "name": "Star8_3G",
     "device": "Star8_3G"
   },
-  "X5": {
-    "brand": "Stylo",
-    "name": "X5",
-    "device": "X5"
-  },
   "X60": {
     "brand": "Doogee",
     "name": "X60",
@@ -21618,6 +21628,11 @@
     "brand": "Cubot",
     "name": "KINGKONG MINI2",
     "device": "KINGKONG_MINI2"
+  },
+  "KINGKONG MINI2 Pro": {
+    "brand": "Cubot",
+    "name": "KINGKONG MINI2 Pro",
+    "device": "KINGKONG_MINI2_Pro"
   },
   "KINGKONG_MINI2_Pro": {
     "brand": "Cubot",
@@ -58300,8 +58315,8 @@
     "device": "BLISS_8"
   },
   "Smart UHD TV": {
-    "brand": "KTCtv",
-    "name": "Electroman",
+    "brand": "THEHAM",
+    "name": "THEHAM",
     "device": "zhongshan"
   },
   "40DNA": {
@@ -58343,6 +58358,11 @@
     "brand": "KTCtv",
     "name": "Siera",
     "device": "zhongshan"
+  },
+  "Tesla 4K Android TV": {
+    "brand": "Tesla",
+    "name": "EU",
+    "device": "yeongdeungpo"
   },
   "Pure": {
     "brand": "KTV",
@@ -86199,6 +86219,11 @@
     "name": "Nokia C2",
     "device": "NBL"
   },
+  "Nokia C2 2nd Edition": {
+    "brand": "Nokia",
+    "name": "Nokia C2 2nd Edition",
+    "device": "DMN"
+  },
   "Nokia C2 Tennen": {
     "brand": "Nokia",
     "name": "Nokia C2 Tennen",
@@ -86213,6 +86238,21 @@
     "brand": "Nokia",
     "name": "Nokia C20 Plus",
     "device": "SUS"
+  },
+  "Nokia C21": {
+    "brand": "Nokia",
+    "name": "Nokia C21",
+    "device": "COR"
+  },
+  "Hope": {
+    "brand": "Nokia",
+    "name": "Nokia C21 Plus",
+    "device": "HPE"
+  },
+  "Nokia C21 Plus": {
+    "brand": "Nokia",
+    "name": "Nokia C21 Plus",
+    "device": "HPE"
   },
   "Nokia C3": {
     "brand": "Nokia",
@@ -86267,7 +86307,7 @@
   "Nokia T20": {
     "brand": "Nokia",
     "name": "Nokia T20",
-    "device": "RDD"
+    "device": "RDDCN"
   },
   "Nokia X10": {
     "brand": "Nokia",
@@ -87070,6 +87110,11 @@
     "device": "X500"
   },
   "OMIX X700": {
+    "brand": "OMIX",
+    "name": "X700",
+    "device": "X700"
+  },
+  "X700": {
     "brand": "OMIX",
     "name": "X700",
     "device": "X700"
@@ -89283,6 +89328,21 @@
     "brand": "Oppo",
     "name": "OPPO Reno7 5G/Find X5 Lite",
     "device": "OPD4A1L1"
+  },
+  "A201OP": {
+    "brand": "Oppo",
+    "name": "OPPO Reno7 A",
+    "device": "OP532BL1"
+  },
+  "CPH2353": {
+    "brand": "Oppo",
+    "name": "OPPO Reno7 A",
+    "device": "OP532BL1"
+  },
+  "OPG04": {
+    "brand": "Oppo",
+    "name": "OPPO Reno7 A",
+    "device": "OP532BL1"
   },
   "OPPO Watch": {
     "brand": "Oppo",
@@ -100364,6 +100424,11 @@
     "name": "Redmi 9 Power",
     "device": "lime"
   },
+  "M2004J19I": {
+    "brand": "Redmi",
+    "name": "Redmi 9 Prime",
+    "device": "lancelot"
+  },
   "220233L2G": {
     "brand": "Redmi",
     "name": "Redmi 9A",
@@ -106019,6 +106084,11 @@
     "name": "Galaxy Buddy",
     "device": "a22x"
   },
+  "SM-M236L": {
+    "brand": "Samsung",
+    "name": "Galaxy Buddy2",
+    "device": "m23xq"
+  },
   "SM-C5000": {
     "brand": "Samsung",
     "name": "Galaxy C5",
@@ -108585,11 +108655,6 @@
     "device": "m22"
   },
   "SM-M236B": {
-    "brand": "Samsung",
-    "name": "Galaxy M23 5G",
-    "device": "m23xq"
-  },
-  "SM-M236L": {
     "brand": "Samsung",
     "name": "Galaxy M23 5G",
     "device": "m23xq"
@@ -111319,6 +111384,11 @@
     "name": "Galaxy S21 FE 5G",
     "device": "r9q"
   },
+  "SM-G990B2": {
+    "brand": "Samsung",
+    "name": "Galaxy S21 FE 5G",
+    "device": "r9q"
+  },
   "SM-G990U": {
     "brand": "Samsung",
     "name": "Galaxy S21 FE 5G",
@@ -111329,7 +111399,22 @@
     "name": "Galaxy S21 FE 5G",
     "device": "r9q"
   },
+  "SM-G990U2": {
+    "brand": "Samsung",
+    "name": "Galaxy S21 FE 5G",
+    "device": "r9q"
+  },
+  "SM-G990U3": {
+    "brand": "Samsung",
+    "name": "Galaxy S21 FE 5G",
+    "device": "r9q"
+  },
   "SM-G990W": {
+    "brand": "Samsung",
+    "name": "Galaxy S21 FE 5G",
+    "device": "r9q"
+  },
+  "SM-G990W2": {
     "brand": "Samsung",
     "name": "Galaxy S21 FE 5G",
     "device": "r9q"
@@ -115609,6 +115694,11 @@
     "name": "Galaxy XCover6 Pro",
     "device": "xcoverpro2"
   },
+  "SM-G736W": {
+    "brand": "Samsung",
+    "name": "Galaxy XCover6 Pro",
+    "device": "xcoverpro2"
+  },
   "GT-S5690": {
     "brand": "Samsung",
     "name": "Galaxy Xcover",
@@ -117808,6 +117898,16 @@
     "brand": "Sharp",
     "name": "AQUOS wish",
     "device": "YLI"
+  },
+  "SH-51C": {
+    "brand": "Sharp",
+    "name": "AQUOS wish2",
+    "device": "SH-51C"
+  },
+  "A204SH": {
+    "brand": "Sharp",
+    "name": "AQUOS wish2",
+    "device": "SXI"
   },
   "801SH": {
     "brand": "Sharp",
@@ -135334,11 +135434,6 @@
     "name": "EU",
     "device": "tamachi"
   },
-  "Tesla 4K Android TV": {
-    "brand": "Tesla",
-    "name": "EU",
-    "device": "yeongdeungpo"
-  },
   "Tesla Android TV": {
     "brand": "Tesla",
     "name": "EU\u3001UK\u3001AP",
@@ -137429,6 +137524,11 @@
     "name": "A13S EEA",
     "device": "A13S"
   },
+  "MP03": {
+    "brand": "Umidigi",
+    "name": "A13 Pro 5G EEA",
+    "device": "A13_Pro_5G"
+  },
   "A3S": {
     "brand": "Umidigi",
     "name": "A3S_EEA",
@@ -137471,7 +137571,7 @@
   },
   "RP04": {
     "brand": "Umidigi",
-    "name": "BISON 2",
+    "name": "BISON 2 EEA",
     "device": "BISON_2"
   },
   "BISON GT": {
