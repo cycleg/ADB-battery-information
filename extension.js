@@ -110,16 +110,14 @@ function getChargeInfo() {
     if (prevBatteryLevel == -1) {
         prevBatteryLevel = currLevel;
     }
-    if (currLevel > prevBatteryLevel) {
+    if ((currLevel > prevBatteryLevel) || (currTimestamp - refreshTimestamp > EstimatePeriod)) {
         let speed = (currLevel - beginBatteryLevel) * 1.0 / (currTimestamp - beginTimestamp);
         let seconds = (100 - currLevel) * 1.0 / speed;
         let hours = Math.floor(seconds / 3600);
         let mins = Math.floor((seconds - hours * 3600) / 60);
         seconds = Math.round(seconds % 60);
-        if ((lastEstimation == "") || (currTimestamp - refreshTimestamp > EstimatePeriod)) {
-            let leadingZeros = (n, len) => n.toString().padStart(len, "0");
-            lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
-        }
+        let leadingZeros = (n, len) => n.toString().padStart(len, "0");
+        lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
         if (currTimestamp - refreshTimestamp > EstimatePeriod) {
             refreshTimestamp = currTimestamp;
         }
