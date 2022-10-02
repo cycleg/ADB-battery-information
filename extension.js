@@ -13,6 +13,7 @@ let visible;
 let beginTimestamp;
 let refreshTimestamp;
 let beginBatteryLevel;
+let prevBatteryLevel;
 let lastEstimation;
 
 function getCurrentFile() {
@@ -64,6 +65,7 @@ function init () {
     beginTimestamp = 0;
     refreshTimestamp = 0;
     beginBatteryLevel = -1;
+    prevBatteryLevel = -1;
     lastEstimation = "";
 
     startDaemon();
@@ -105,7 +107,10 @@ function getChargeInfo() {
     if (beginBatteryLevel == -1) {
         beginBatteryLevel = currLevel;
     }
-    if ((currLevel > beginBatteryLevel) && (currTimestamp > beginTimestamp)) {
+    if (prevBatteryLevel == -1) {
+        prevBatteryLevel = currLevel;
+    }
+    if (currLevel > prevBatteryLevel) {
         let speed = (currLevel - beginBatteryLevel) * 1.0 / (currTimestamp - beginTimestamp);
         let seconds = (100 - currLevel) * 1.0 / speed;
         let hours = Math.floor(seconds / 3600);
@@ -118,8 +123,13 @@ function getChargeInfo() {
         if (currTimestamp - refreshTimestamp > EstimatePeriod) {
             refreshTimestamp = currTimestamp;
         }
+        prevBatteryLevel = currLevel;
     }
-    return ((currLevel > -1) ? "Battery " + currLevel + "%" : "getting battery info error") + " (" + getDevDescription(getModel()) + ")" + lastEstimation;
+    let message = ((currLevel > -1) ? "Battery " + currLevel + "%" : "Getting battery info error") + lastEstimation;
+    if (currLevel == 100) {
+        message = "Battery fully charged"
+    }
+    return message + " (" + getDevDescription(getModel()) + ")";
 }
 
 function showInfo() {
@@ -135,6 +145,7 @@ function showInfo() {
 function hideInfo() {
     if (visible) {
         lastEstimation = "";
+        prevBatteryLevel = -1;
         beginBatteryLevel = -1;
         refreshTimestamp = 0;
         beginTimestamp = refreshTimestamp;
