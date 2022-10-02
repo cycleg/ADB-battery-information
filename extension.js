@@ -3,12 +3,17 @@ const {St, Clutter} = imports.gi;
 const Main = imports.ui.main;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
+const EstimatePeriod = 180;
 
 let devDescriptions;
 let panelButton;
 let panelButtonText;
 let timeout;
 let visible;
+let beginTimestamp;
+let refreshTimestamp;
+let beginBatteryLevel;
+let lastEstimation;
 
 function getCurrentFile() {
     let stack = (new Error()).stack;
@@ -43,7 +48,6 @@ function init () {
     } else {
         devDescriptions = {}
     }
-    visible = false;
     // Create a Button
     panelButton = new St.Bin({
         style_class : "panel-button",
@@ -55,6 +59,12 @@ function init () {
     });
 
     panelButton.set_child(panelButtonText);
+
+    visible = false;
+    beginTimestamp = 0;
+    refreshTimestamp = 0;
+    beginBatteryLevel = -1;
+    lastEstimation = "";
 
     startDaemon();
 }
@@ -82,6 +92,7 @@ function getDevDescription(model) {
 
 function getChargeInfo() {
     let cmd = 'adb shell dumpsys battery';
+    let currTimestamp = Date.now() / 1000;
     let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
     if (status !== 0) {
         return ""
@@ -90,7 +101,25 @@ function getChargeInfo() {
     if (result.size == 0) {
         return ""
     }
-    return (result.has("level") ? "Battery " + result.get("level") + "%" : "getting battery info error") + " (" + getDevDescription(getModel()) + ")";
+    let currLevel = result.has("level") ? result.get("level") : -1;
+    if (beginBatteryLevel == -1) {
+        beginBatteryLevel = currLevel;
+    }
+    if ((currLevel > beginBatteryLevel) && (currTimestamp > beginTimestamp)) {
+        let speed = (currLevel - beginBatteryLevel) * 1.0 / (currTimestamp - beginTimestamp);
+        let seconds = (100 - currLevel) * 1.0 / speed;
+        let hours = Math.floor(seconds / 3600);
+        let mins = Math.floor((seconds - hours * 3600) / 60);
+        seconds = Math.round(seconds % 60);
+        if ((lastEstimation == "") || (currTimestamp - refreshTimestamp > EstimatePeriod)) {
+            let leadingZeros = (n, len) => n.toString().padStart(len, "0");
+            lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
+        }
+        if (currTimestamp - refreshTimestamp > EstimatePeriod) {
+            refreshTimestamp = currTimestamp;
+        }
+    }
+    return ((currLevel > -1) ? "Battery " + currLevel + "%" : "getting battery info error") + " (" + getDevDescription(getModel()) + ")" + lastEstimation;
 }
 
 function showInfo() {
@@ -98,11 +127,17 @@ function showInfo() {
         // Add the button to the panel
         Main.panel._rightBox.insert_child_at_index(panelButton, 0);
         visible = true;
+        beginTimestamp = Date.now() / 1000;
+        refreshTimestamp = beginTimestamp;
     }
 }
 
 function hideInfo() {
     if (visible) {
+        lastEstimation = "";
+        beginBatteryLevel = -1;
+        refreshTimestamp = 0;
+        beginTimestamp = refreshTimestamp;
         visible = false;
         Main.panel._rightBox.remove_child(panelButton);
     }
