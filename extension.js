@@ -42,12 +42,12 @@ function getCurrentFile() {
 
 function init () {
     // get the contents of the json file
-    let [, extensionPath,] = getCurrentFile()
+    let [, extensionPath,] = getCurrentFile();
     let [ok, contents] = GLib.file_get_contents(extensionPath + '/devices.json');
     if (ok) {
         devDescriptions = JSON.parse(contents);
     } else {
-        devDescriptions = {}
+        devDescriptions = {};
     }
     // Create a Button
     panelButton = new St.Bin({
@@ -83,26 +83,26 @@ function getModel() {
 }
 
 function getDevDescription(model) {
-    let ret = model
+    let ret = model;
     if (ret in devDescriptions) {
-      let brand = devDescriptions[ret]["brand"]
-      let name = devDescriptions[ret]["name"]
-      ret = brand + ((name !== "") ? " " + name : "")
+      let brand = devDescriptions[ret]["brand"];
+      let name = devDescriptions[ret]["name"];
+      ret = brand + ((name !== "") ? " " + name : "");
     }
     return (ret !== "") ? ret : model;
 }
 
 function getChargeInfo() {
     let cmd = 'adb shell dumpsys battery';
-    let currTimestamp = Date.now() / 1000;
     let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
     if (status !== 0) {
-        return ""
+        return "";
     }
     let result = txtToMap(out.toString());
     if (result.size == 0) {
-        return ""
+        return "";
     }
+    let currTimestamp = Math.floor(Date.now() / 1000);
     let currLevel = result.has("level") ? result.get("level") : -1;
     if (beginBatteryLevel == -1) {
         beginBatteryLevel = currLevel;
@@ -112,20 +112,22 @@ function getChargeInfo() {
     }
     if ((currLevel > prevBatteryLevel) || (currTimestamp - refreshTimestamp > EstimatePeriod)) {
         let speed = (currLevel - beginBatteryLevel) * 1.0 / (currTimestamp - beginTimestamp);
-        let seconds = (100 - currLevel) * 1.0 / speed;
-        let hours = Math.floor(seconds / 3600);
-        let mins = Math.floor((seconds - hours * 3600) / 60);
-        seconds = Math.round(seconds % 60);
-        let leadingZeros = (n, len) => n.toString().padStart(len, "0");
-        lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
         if (currTimestamp - refreshTimestamp > EstimatePeriod) {
             refreshTimestamp = currTimestamp;
         }
-        prevBatteryLevel = currLevel;
+        if (speed > 0) {
+            let leadingZeros = (n, len) => n.toString().padStart(len, "0");
+            let seconds = (100 - currLevel) * 1.0 / speed;
+            let hours = Math.floor(seconds / 3600);
+            let mins = Math.floor((seconds - hours * 3600) / 60);
+            seconds = Math.round(seconds % 60);
+            lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
+            prevBatteryLevel = currLevel;
+        }
     }
     let message = ((currLevel > -1) ? "Battery " + currLevel + "%" : "Getting battery info error") + lastEstimation;
     if (currLevel == 100) {
-        message = "Battery fully charged"
+        message = "Battery fully charged";
     }
     return message + " (" + getDevDescription(getModel()) + ")";
 }
@@ -135,7 +137,7 @@ function showInfo() {
         // Add the button to the panel
         Main.panel._rightBox.insert_child_at_index(panelButton, 0);
         visible = true;
-        beginTimestamp = Date.now() / 1000;
+        beginTimestamp = Math.floor(Date.now() / 1000);
         refreshTimestamp = beginTimestamp;
     }
 }
