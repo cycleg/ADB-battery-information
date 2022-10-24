@@ -17,34 +17,8 @@ let timeout;
 let visible;
 let devicesData = new Map();
 
-function getCurrentFile() {
-    var stack = (new Error()).stack;
-
-    // Assuming we're importing this directly from an extension (and we shouldn't
-    // ever not be), its UUID should be directly in the path here.
-    var stackLine = stack.split('\n')[1];
-    if (!stackLine)
-        throw new Error('Could not find current file');
-
-    // The stack line is like:
-    //   init([object Object])@/home/user/data/gnome-shell/extensions/u@u.id/prefs.js:8
-    //
-    // In the case that we're importing from
-    // module scope, the first field is blank:
-    //   @/home/user/data/gnome-shell/extensions/u@u.id/prefs.js:8
-    var match = new RegExp('@(.+):\\d+').exec(stackLine);
-    if (!match)
-        throw new Error('Could not find current file');
-
-    var path = match[1];
-    var file = Gio.File.new_for_path(path);
-    return [file.get_path(), file.get_parent().get_path(), file.get_basename()];
-}
-
 function init () {
-    // get the contents of the json file
-    var [, extensionPath,] = getCurrentFile();
-    var [ok, contents] = GLib.file_get_contents(extensionPath + '/devices.json');
+    var [ok, contents] = GLib.file_get_contents(Me.path + '/devices.json');
     if (ok) {
         devDescriptions = JSON.parse(contents);
     } else {
