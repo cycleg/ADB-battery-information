@@ -5,16 +5,17 @@ const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
 const EstimatePeriod = 180;
 
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
+
+const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
+
 let devDescriptions;
 let panelButton;
 let panelButtonText;
 let timeout;
 let visible;
-let beginTimestamp;
-let refreshTimestamp;
-let beginBatteryLevel;
-let prevBatteryLevel;
-let lastEstimation;
+let devicesData = new Map();
 
 function getCurrentFile() {
     var stack = (new Error()).stack;
@@ -62,11 +63,6 @@ function init () {
     panelButton.set_child(panelButtonText);
 
     visible = false;
-    beginTimestamp = 0;
-    refreshTimestamp = 0;
-    beginBatteryLevel = -1;
-    prevBatteryLevel = -1;
-    lastEstimation = "";
 
     startDaemon();
 }
@@ -127,16 +123,17 @@ function getChargeInfo(deviceId) {
     }
     var currTimestamp = Math.floor(Date.now() / 1000);
     var currLevel = result.has("level") ? result.get("level") : -1;
-    if (beginBatteryLevel == -1) {
-        beginBatteryLevel = currLevel;
+    var devData = devicesData.get(deviceId)
+    if (devData.beginBatteryLevel == -1) {
+        devData.beginBatteryLevel = currLevel;
     }
-    if (prevBatteryLevel == -1) {
-        prevBatteryLevel = currLevel;
+    if (devData.prevBatteryLevel == -1) {
+        devData.prevBatteryLevel = currLevel;
     }
-    if ((currLevel > prevBatteryLevel) || (currTimestamp - refreshTimestamp > EstimatePeriod)) {
-        let speed = (currLevel - beginBatteryLevel) * 1.0 / (currTimestamp - beginTimestamp);
-        if (currTimestamp - refreshTimestamp > EstimatePeriod) {
-            refreshTimestamp = currTimestamp;
+    if ((currLevel > devData.prevBatteryLevel) || (currTimestamp - devData.refreshTimestamp > EstimatePeriod)) {
+        let speed = (currLevel - devData.beginBatteryLevel) * 1.0 / (currTimestamp - devData.beginTimestamp);
+        if (currTimestamp - devData.refreshTimestamp > EstimatePeriod) {
+            devData.refreshTimestamp = currTimestamp;
         }
         if (speed > 0) {
             let leadingZeros = (n, len) => n.toString().padStart(len, "0");
@@ -144,15 +141,19 @@ function getChargeInfo(deviceId) {
             let hours = Math.floor(seconds / 3600);
             let mins = Math.floor((seconds - hours * 3600) / 60);
             seconds = Math.round(seconds % 60);
-            lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
-            prevBatteryLevel = currLevel;
+            devData.lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
+            devData.prevBatteryLevel = currLevel;
         }
     }
-    var message = ((currLevel > -1) ? "Battery " + currLevel + "%" : "Getting battery info error") + lastEstimation;
+    var message = ((currLevel > -1) ? "Battery " + currLevel + "%" : "Getting battery info error") + devData.lastEstimation;
     if (currLevel == 100) {
         message = "Battery fully charged";
     }
-    return message + " (" + getDevDescription(getModel(deviceId)) + ")";
+    if (devData.model == "") {
+        devData.model = getModel(deviceId);
+    }
+    devicesData.set(deviceId, devData);
+    return message + " (" + getDevDescription(devData.model) + ")";
 }
 
 function showInfo() {
@@ -160,18 +161,11 @@ function showInfo() {
         // Add the button to the panel
         Main.panel._rightBox.insert_child_at_index(panelButton, 0);
         visible = true;
-        beginTimestamp = Math.floor(Date.now() / 1000);
-        refreshTimestamp = beginTimestamp;
     }
 }
 
 function hideInfo() {
     if (visible) {
-        lastEstimation = "";
-        prevBatteryLevel = -1;
-        beginBatteryLevel = -1;
-        refreshTimestamp = 0;
-        beginTimestamp = refreshTimestamp;
         visible = false;
         Main.panel._rightBox.remove_child(panelButton);
     }
@@ -180,32 +174,49 @@ function hideInfo() {
 function updateBattery() {
     var devices = getConnectedDevices();
     if (devices.length > 0) {
-        let info = getChargeInfo(devices[0]);
-        if (info !== "") {
-            panelButtonText.set_text(info);
-            showInfo();
-        }
+        let inCache = Array.from(devicesData.keys());
+        // add new
+        let _keys = devices.filter(e => !inCache.includes(e));
+        _keys.forEach(function(key) {
+            let info = new DeviceInfo();
+            info.beginTimestamp = Math.floor(Date.now() / 1000);
+            info.refreshTimestamp = info.beginTimestamp;
+            devicesData.set(key, info)
+        });
+        // clean disconnected
+        _keys = inCache.filter(e => !devices.includes(e));
+        _keys.forEach(key => devicesData.get(key).clean());
+        // update devices data
+        devices.forEach(function(deviceId, index) {
+            let info = getChargeInfo(deviceId);
+            if ((info !== "") && (index == 0)) {
+                // only first from devices list show
+                panelButtonText.set_text(info);
+                showInfo();
+            }
+        });
     } else {
         hideInfo();
+        devicesData.forEach(e => e.clean());
     }
     return true;
 }
 
 function enable() {
-    showInfo();
-    timeout = Mainloop.timeout_add_seconds(10.0, updateBattery);
     updateBattery();
+    timeout = Mainloop.timeout_add_seconds(10.0, updateBattery);
 }
 
 function disable() {
     hideInfo();
+    devicesData.forEach(e => e.clean());
     Mainloop.source_remove(timeout);
 }
 
 function txtToMap(str) {
     var params = str.split("\n");
     var dict = new Map();
-    for (var i = 0; i < params.length; i++) {
+    for (let i = 0; i < params.length; i++) {
         let parts = params[i].split(":");
         dict.set(parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
     }
