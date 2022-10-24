@@ -107,9 +107,9 @@ function getChargeInfo(deviceId) {
             devData.prevBatteryLevel = currLevel;
         }
     }
-    var message = ((currLevel > -1) ? "battery " + currLevel + "%" : "getting battery info error") + devData.lastEstimation;
+    var message = ((currLevel > -1) ? "" + currLevel + "%" : "getting info error") + devData.lastEstimation;
     if (currLevel == 100) {
-        message = "battery fully charged";
+        message = "fully charged";
     }
     if (devData.model == "") {
         devData.model = getModel(deviceId);
@@ -123,13 +123,17 @@ function showInfo() {
         // Add the button to the panel
         panelButton = new PanelMenu.Button()
         let menuLayout = new St.BoxLayout();
-        let icon = new St.Icon({ style_class: 'system-status-icon'});
-        icon.gicon = Gio.icon_new_for_string('. GThemedIcon battery-good-symbolic battery-good');
-        menuLayout.add(icon);
-        menuLayout.add(new St.Label({
-            text : "Android devices",
+        menuLayout.add(new St.Icon({
+            style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
+            gicon: Gio.icon_new_for_string('. GThemedIcon ac-adapter-symbolic'),
+        }));
+        menuLayout.add(new St.Icon({
+            style_class: 'system-status-icon',
+            x_align: Clutter.ActorAlign.START,
+            y_align: Clutter.ActorAlign.CENTER,
+            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-icon.svg'),
         }));
         panelButton.add_actor(menuLayout);
         panelButton.setMenu(new PopupMenu.PopupMenu(panelButton, 0, St.Side.TOP));
@@ -168,18 +172,37 @@ function updateBattery() {
         if (visible) {
             panelButton.menu.removeAll();
         }
-        devices.forEach(function(deviceId, index) {
+        devices.forEach(function(deviceId) {
+            showInfo();
             let info = getChargeInfo(deviceId);
-            if (info !== "") {
-                showInfo();
-                let _item = new PopupMenu.PopupBaseMenuItem();
-                _item.actor.add_child(new St.Label({
-                    text : info,
-                    x_align: Clutter.ActorAlign.START,
-                    y_align: Clutter.ActorAlign.START,
-                }));
-                panelButton.menu.addMenuItem(_item);
+            let level = devicesData.get(deviceId).prevBatteryLevel;
+            let _item = new PopupMenu.PopupBaseMenuItem();
+            let _icon_str = '. GThemedIcon ';
+            if (level == 100) {
+                _icon_str = _icon_str + 'battery-full-charged-symbolic';
+            } else if (level > 90) {
+                _icon_str = _icon_str + 'battery-full-charging-symbolic battery-full-symbolic';
+            } else if (level > 20) {
+                _icon_str = _icon_str + 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 14) {
+                _icon_str = _icon_str + 'battery-low-charging-symbolic battery-low-symbolic';
+            } else if (level > 0) {
+                _icon_str = _icon_str + 'battery-caution-charging-symbolic battery-caution-symbolic';
+            } else if (level == 0) {
+                _icon_str = _icon_str + 'battery-empty-symbolic';
+            } else { // -1
+                _icon_str = _icon_str + 'battery-missing-symbolic';
             }
+            _item.actor.add_child(new St.Icon({
+                style_class: 'popup-menu-icon',
+                gicon: Gio.icon_new_for_string(_icon_str),
+            }));
+            _item.actor.add_child(new St.Label({
+                text: info == "" ? deviceId + ": no info" : info,
+                x_align: Clutter.ActorAlign.START,
+                y_align: Clutter.ActorAlign.START,
+            }));
+            panelButton.menu.addMenuItem(_item);
         });
     } else {
         hideInfo();
