@@ -1,5 +1,7 @@
 const Mainloop = imports.mainloop;
 const {St, Clutter} = imports.gi;
+const PanelMenu = imports.ui.panelMenu;
+const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
 const Gio = imports.gi.Gio;
 const GLib = imports.gi.GLib;
@@ -12,7 +14,6 @@ const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
 
 let devDescriptions;
 let panelButton;
-let panelButtonText;
 let timeout;
 let visible;
 let devicesData = new Map();
@@ -24,20 +25,7 @@ function init () {
     } else {
         devDescriptions = {};
     }
-    // Create a Button
-    panelButton = new St.Bin({
-        style_class : "panel-button",
-    });
-    
-    panelButtonText = new St.Label({
-        text : "",
-        y_align: Clutter.ActorAlign.CENTER,
-    });
-
-    panelButton.set_child(panelButtonText);
-
     visible = false;
-
     startDaemon();
 }
 
@@ -119,20 +107,33 @@ function getChargeInfo(deviceId) {
             devData.prevBatteryLevel = currLevel;
         }
     }
-    var message = ((currLevel > -1) ? "Battery " + currLevel + "%" : "Getting battery info error") + devData.lastEstimation;
+    var message = ((currLevel > -1) ? "battery " + currLevel + "%" : "getting battery info error") + devData.lastEstimation;
     if (currLevel == 100) {
-        message = "Battery fully charged";
+        message = "battery fully charged";
     }
     if (devData.model == "") {
         devData.model = getModel(deviceId);
     }
     devicesData.set(deviceId, devData);
-    return message + " (" + getDevDescription(devData.model) + ")";
+    return getDevDescription(devData.model) + ": " + message;
 }
 
 function showInfo() {
     if (!visible) {
         // Add the button to the panel
+        panelButton = new PanelMenu.Button()
+        let menuLayout = new St.BoxLayout();
+        let icon = new St.Icon({ style_class: 'system-status-icon'});
+        icon.gicon = Gio.icon_new_for_string('. GThemedIcon battery-good-symbolic battery-good');
+        menuLayout.add(icon);
+        menuLayout.add(new St.Label({
+            text : "Android devices",
+            x_align: Clutter.ActorAlign.START,
+            y_align: Clutter.ActorAlign.CENTER,
+        }));
+        panelButton.add_actor(menuLayout);
+        panelButton.setMenu(new PopupMenu.PopupMenu(panelButton, 0, St.Side.TOP));
+        Main.panel.addToStatusArea('ADB-battery-information', panelButton);
         Main.panel._rightBox.insert_child_at_index(panelButton, 0);
         visible = true;
     }
@@ -142,6 +143,9 @@ function hideInfo() {
     if (visible) {
         visible = false;
         Main.panel._rightBox.remove_child(panelButton);
+        Main.panel.statusArea['ADB-battery-information'].destroy();
+        panelButton.destroy();
+        panelButton = null;
     }
 }
 
@@ -161,12 +165,20 @@ function updateBattery() {
         _keys = inCache.filter(e => !devices.includes(e));
         _keys.forEach(key => devicesData.get(key).clean());
         // update devices data
+        if (visible) {
+            panelButton.menu.removeAll();
+        }
         devices.forEach(function(deviceId, index) {
             let info = getChargeInfo(deviceId);
-            if ((info !== "") && (index == 0)) {
-                // only first from devices list show
-                panelButtonText.set_text(info);
+            if (info !== "") {
                 showInfo();
+                let _item = new PopupMenu.PopupBaseMenuItem();
+                _item.actor.add_child(new St.Label({
+                    text : info,
+                    x_align: Clutter.ActorAlign.START,
+                    y_align: Clutter.ActorAlign.START,
+                }));
+                panelButton.menu.addMenuItem(_item);
             }
         });
     } else {
