@@ -127,7 +127,7 @@ function showInfo() {
             style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-icon.svg'),
+            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-white.svg'),
         }));
         menuLayout.add(new St.Icon({
             style_class: 'system-status-icon',
