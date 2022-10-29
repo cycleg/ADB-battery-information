@@ -1,3 +1,5 @@
+'use strict';
+
 const Mainloop = imports.mainloop;
 const {St, Clutter} = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
@@ -11,6 +13,10 @@ const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
 const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
+
+const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
+const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
+const _ = Gettext.gettext;
 
 let devDescriptions;
 let panelButton;
@@ -107,9 +113,9 @@ function getChargeInfo(deviceId) {
             devData.prevBatteryLevel = currLevel;
         }
     }
-    var message = ((currLevel > -1) ? "" + currLevel + "%" : "getting info error") + devData.lastEstimation;
+    var message = ((currLevel > -1) ? "" + currLevel + "%" : _("getting info error")) + devData.lastEstimation;
     if (currLevel == 100) {
-        message = "fully charged";
+        message = _("fully charged");
     }
     if (devData.model == "") {
         devData.model = getModel(deviceId);
@@ -198,7 +204,7 @@ function updateBattery() {
                 gicon: Gio.icon_new_for_string(_icon_str),
             }));
             _item.actor.add_child(new St.Label({
-                text: info == "" ? deviceId + ": no info" : info,
+                text: info == "" ? deviceId + _(": no info") : info,
                 x_align: Clutter.ActorAlign.START,
                 y_align: Clutter.ActorAlign.START,
             }));
