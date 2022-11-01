@@ -94,6 +94,7 @@ function getChargeInfo(deviceId) {
     var devData = devicesData.get(deviceId)
     if (devData.beginBatteryLevel == -1) {
         devData.beginBatteryLevel = currLevel;
+        devData.beginTimestamp = currTimestamp;
     }
     if (devData.prevBatteryLevel == -1) {
         devData.prevBatteryLevel = currLevel;
