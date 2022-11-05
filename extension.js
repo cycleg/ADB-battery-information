@@ -1,18 +1,18 @@
 'use strict';
 
 const Mainloop = imports.mainloop;
-const {St, Clutter} = imports.gi;
+const {Clutter, Gio, GLib, St} = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
-const Gio = imports.gi.Gio;
-const GLib = imports.gi.GLib;
 const EstimatePeriod = 180;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
 const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
+const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
+const PANEL_BALOON_HOVER_TIMEOUT = 300;
 
 const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
@@ -20,7 +20,8 @@ const _ = Gettext.gettext;
 
 let devDescriptions;
 let panelButton;
-let timeout;
+let panelBaloon;
+let refreshInfoTimeout;
 let visible;
 let devicesData = new Map();
 
@@ -142,6 +143,17 @@ function showInfo() {
             y_align: Clutter.ActorAlign.CENTER,
             gicon: Gio.icon_new_for_string('. GThemedIcon ac-adapter-symbolic'),
         }));
+        panelBaloon = new PanelMenuBaloon(
+            menuLayout,
+            _('Android devices charge levels'),
+            { style_class: 'adb-battery-info-label'}
+        );
+        panelButton.connect('enter-event', () => {
+            panelBaloon.showLabel();
+        });
+        panelButton.connect('leave-event', () => {
+            panelBaloon.hideLabel();
+        });
         panelButton.add_actor(menuLayout);
         panelButton.setMenu(new PopupMenu.PopupMenu(panelButton, 0, St.Side.TOP));
         Main.panel.addToStatusArea('ADB-battery-information', panelButton);
@@ -155,6 +167,8 @@ function hideInfo() {
         visible = false;
         Main.panel._rightBox.remove_child(panelButton);
         Main.panel.statusArea['ADB-battery-information'].destroy();
+        panelBaloon.destroy();
+        panelBaloon = null;
         panelButton.destroy();
         panelButton = null;
     }
@@ -220,13 +234,14 @@ function updateBattery() {
 
 function enable() {
     updateBattery();
-    timeout = Mainloop.timeout_add_seconds(10.0, updateBattery);
+    refreshInfoTimeout = Mainloop.timeout_add_seconds(10.0, updateBattery);
 }
 
 function disable() {
     hideInfo();
     devicesData.forEach(e => e.clean());
-    Mainloop.source_remove(timeout);
+    Mainloop.source_remove(refreshInfoTimeout);
+    refreshInfoTimeout = null;
 }
 
 function txtToMap(str) {
