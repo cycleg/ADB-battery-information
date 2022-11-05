@@ -135719,6 +135719,11 @@
     "name": "P40HD_ROW",
     "device": "P40HD_ROW"
   },
+  "P80T_EEA": {
+    "brand": "Teclast",
+    "name": "P80T_EEA",
+    "device": "P80T"
+  },
   "P80T_ROW": {
     "brand": "Teclast",
     "name": "P80T_ROW",
