@@ -62,7 +62,7 @@ var DeviceInfo = class {
     }
 
     get refreshTimestamp() {
-        return this._beginTimestamp;
+        return this._refreshTimestamp;
     }
 
     set refreshTimestamp(timestamp) {

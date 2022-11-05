@@ -1,18 +1,21 @@
 'use strict';
 
+// max. period without estimations update
+const EstimatePeriod = 60;
+// info refresh period
+const RefreshPeriod = 10;
+
 const Mainloop = imports.mainloop;
 const {Clutter, Gio, GLib, St} = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
-const EstimatePeriod = 180;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
 const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
 const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
-const PANEL_BALOON_HOVER_TIMEOUT = 300;
 
 const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
@@ -33,11 +36,7 @@ function init () {
         devDescriptions = {};
     }
     visible = false;
-    startDaemon();
-}
-
-//start adb daemon on init
-function startDaemon() {
+    // start adb daemon
     GLib.spawn_async(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null, null);
 }
 
@@ -102,9 +101,6 @@ function getChargeInfo(deviceId) {
     }
     if ((currLevel > devData.prevBatteryLevel) || (currTimestamp - devData.refreshTimestamp > EstimatePeriod)) {
         let speed = (currLevel - devData.beginBatteryLevel) * 1.0 / (currTimestamp - devData.beginTimestamp);
-        if (currTimestamp - devData.refreshTimestamp > EstimatePeriod) {
-            devData.refreshTimestamp = currTimestamp;
-        }
         if (speed > 0) {
             let leadingZeros = (n, len) => n.toString().padStart(len, "0");
             let seconds = (100 - currLevel) * 1.0 / speed;
@@ -113,6 +109,7 @@ function getChargeInfo(deviceId) {
             seconds = Math.round(seconds % 60);
             devData.lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
             devData.prevBatteryLevel = currLevel;
+            devData.refreshTimestamp = currTimestamp;
         }
     }
     var message = ((currLevel > -1) ? "" + currLevel + "%" : _("getting info error")) + devData.lastEstimation;
@@ -234,7 +231,7 @@ function updateBattery() {
 
 function enable() {
     updateBattery();
-    refreshInfoTimeout = Mainloop.timeout_add_seconds(10.0, updateBattery);
+    refreshInfoTimeout = Mainloop.timeout_add_seconds(RefreshPeriod, updateBattery);
 }
 
 function disable() {
