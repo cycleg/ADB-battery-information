@@ -43,7 +43,7 @@ class PanelMenuBaloon extends St.Label {
         let y = stageY == 0 ? stageY + parentHeight + yOffset : stageY - parentHeight - yOffset;
         let x = stageX + parentWidth < screenWidth / 2 ?
                 textDirectionLeft ? stageX + xOffset : stageX + parentWidth - xOffset :
-                textDirectionLeft ? stageX + parentWidth - xOffset : stageX + xOffset;
+                stageX + parentWidth - labelWidth - xOffset;
 
         if (textDirectionLeft) {
             // stop long tooltips falling off the right of the screen
