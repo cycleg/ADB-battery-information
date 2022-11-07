@@ -13,31 +13,6 @@ const Me = ExtensionUtils.getCurrentExtension();
 
 const CSV = Me.imports.CSV;
 */
-
-function getCurrentFile() {
-    let stack = (new Error()).stack;
-
-    // Assuming we're importing this directly from an extension (and we shouldn't
-    // ever not be), its UUID should be directly in the path here.
-    let stackLine = stack.split('\n')[1];
-    if (!stackLine)
-        throw new Error('Could not find current file');
-
-    // The stack line is like:
-    //   init([object Object])@/home/user/data/gnome-shell/extensions/u@u.id/prefs.js:8
-    //
-    // In the case that we're importing from
-    // module scope, the first field is blank:
-    //   @file:///home/user/data/gnome-shell/extensions/u@u.id/prefs.js:8:1
-    let match = new RegExp('@file://(.+):\\d+:\\d+').exec(stackLine);
-    if (!match)
-        throw new Error('Could not find current file');
-
-    let path = match[1];
-    let file = Gio.File.new_for_path(path);
-    return file;
-}
-const csv_path = getCurrentFile().get_parent().get_path() + '/CSV.mjs';
 import CSV from './CSV.mjs';
 
 const loop = GLib.MainLoop.new(null, false);
@@ -75,40 +50,26 @@ function splice_callback(outputStream, result) {
         decoder.decode(data.toArray()),
         csvDialect,
     );
-    let defReference = new Map();
+    let defReference = {};
     parsed.mappedRows.forEach(function(row) {
-        defReference.set(
-            row["Model"],
-            new Map([
-                ['brand', row["﻿Retail Branding"]],
-                ['name', row["Marketing Name"]],
-                ['device', row["Device"]],
-            ])
-        )
-    });
-    console.log(JSON.stringify(defReference, function (key, value) {
-      if(value instanceof Map) {
-        return {
-          dataType: 'Map',
-          value: Array.from(value.entries()), // or with spread: value: [...value]
+        defReference[row["Model"]] = {
+            'brand': row["﻿Retail Branding"],
+            'name': row["Marketing Name"],
+            'device': row["Device"]
         };
-      } else {
-        return value;
-      }
-    }));
+    });
+    // Me.path + GLib.DIR_SEPARATOR_S + DEVICES_DB_FILE
+    let fout = Gio.File.new_for_path(DEVICES_DB_FILE);
+    let [ok, etag] = fout.replace_contents(
+        JSON.stringify(defReference, null, 2),
+        null,
+        false,
+        Gio.FileCreateFlags.REPLACE_DESTINATION,
+        null,
+    );
+    GLib.free(etag);
     loop.quit();
 }
-
-/*
-function reviver(key, value) {
-  if(typeof value === 'object' && value !== null) {
-    if (value.dataType === 'Map') {
-      return new Map(value.value);
-    }
-  }
-  return value;
-}
-*/
 
 function send_async_callback(self, res) {
     let inputStream;

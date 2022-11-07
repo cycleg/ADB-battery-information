@@ -28,7 +28,7 @@ let visible;
 let devicesData = new Map();
 
 function init () {
-    var [ok, contents] = GLib.file_get_contents(Me.path + '/devices.json');
+    var [ok, contents] = GLib.file_get_contents(Me.path + GLib.DIR_SEPARATOR_S + 'devices.json');
     if (ok) {
         devDescriptions = JSON.parse(contents);
     } else {
