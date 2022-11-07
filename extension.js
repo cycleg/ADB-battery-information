@@ -5,7 +5,6 @@ const EstimatePeriod = 60;
 // info refresh period
 const RefreshPeriod = 10;
 
-const Mainloop = imports.mainloop;
 const {Clutter, Gio, GLib, St} = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
@@ -226,18 +225,18 @@ function updateBattery() {
         hideInfo();
         devicesData.forEach(e => e.clean());
     }
-    return true;
+    return GLib.SOURCE_CONTINUE;
 }
 
 function enable() {
     updateBattery();
-    refreshInfoTimeout = Mainloop.timeout_add_seconds(RefreshPeriod, updateBattery);
+    refreshInfoTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
 }
 
 function disable() {
     hideInfo();
     devicesData.forEach(e => e.clean());
-    Mainloop.source_remove(refreshInfoTimeout);
+    GLib.Source.remove(refreshInfoTimeout);
     refreshInfoTimeout = null;
 }
 
