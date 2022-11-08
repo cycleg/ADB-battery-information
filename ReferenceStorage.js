@@ -15,40 +15,58 @@ var ReferenceStorage = class ReferenceStorage {
     static DEVICES_DB_FILE = 'devices.json';
 
     constructor() {
-        this._defReference = {
-          'hash': '',
-          'devices': {},
-        };
-        this._updated = false;
+        this._reference = {}
+        this._hash = '';
     }
 
-    get reference() {
-        return this._defReference;
+    get empty() {
+        return this._hash == '';
     }
 
-    get updated() {
-        return this._updated;
+    getDevDescription(model) {
+        var ret = model;
+        if (ret in this._reference) {
+            let brand = this._reference[ret]["brand"];
+            let name = this._reference[ret]["name"];
+            ret = brand + ((name !== "") ? " " + name : "");
+        }
+        return (ret !== "") ? ret : model;
     }
 
-    set updated(value) {
-        this._updated = value;
+    loadFromCache() {
+        const cache = Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
+        var [ok, contents] = GLib.file_get_contents(cache);
+        if (ok) {
+            let devReference = JSON.parse(contents);
+            this._reference = devReference['devices'];
+            this._hash = devReference['hash'];
+            console.log(
+                '[ADB-battery-information] Cached reference loaded from "%s".',
+                cache,
+            );
+        } else {
+            console.warn(
+                '[ADB-battery-information] Cached reference not loaded from "%s".',
+                cache,
+            );
+        }
     }
 
-    reload(oldHash) {
+    loadRemote() {
         var downloader = new HttpDownloader(null);
-        var actionComplete = downloader.head(this.DEVICES_DB_URL);
+        var actionComplete = downloader.head(ReferenceStorage.DEVICES_DB_URL);
         var state = 'checkHash';
         var defReference = {};
         console.log(
-            '[ADB-battery-information] Devices reference update started.',
+            '[ADB-battery-information] Devices reference update from remote resource "%s".',
+            ReferenceStorage.DEVICES_DB_URL,
         );
         actionComplete
             .then(function(data) {
-                state = (downloader.hash == oldHash) ? 'end' : 'loadFile';
+                state = (downloader.hash == this._hash) ? 'end' : 'loadFile';
                 if (state == 'end') {
                     console.log(
-                        '[ADB-battery-information] "%s" not changed.',
-                        this.DEVICES_DB_URL,
+                        '[ADB-battery-information] Remote resource not changed.',
                     );
                 }
             })
@@ -56,12 +74,12 @@ var ReferenceStorage = class ReferenceStorage {
                 if (err instanceof Soup.Message) {
                     console.error(
                         '[ADB-battery-information] "%s" HEAD status: %d %s',
-                        this.DEVICES_DB_URL,
+                        ReferenceStorage.DEVICES_DB_URL,
                         err.status_code,
                         err.reason_phrase,
                     );
                 } else {
-                    console.error('[ADB-battery-information] %s', err);
+                    console.error('[ADB-battery-information] HEAD request error %s', err);
                 }
                 state = 'end';
             });
@@ -74,13 +92,13 @@ var ReferenceStorage = class ReferenceStorage {
                 .catch(function(err) {
                     if (err instanceof Soup.Message) {
                         console.error(
-                            '[ADB-battery-information] "%s" download status: %d %s',
-                            this.DEVICES_DB_URL,
+                            '[ADB-battery-information] Remote resource download status: %d %s',
+                            ReferenceStorage.DEVICES_DB_URL,
                             err.status_code,
                             err.reason_phrase,
                         );
                     } else {
-                        console.error('[ADB-battery-information] %s', err);
+                        console.error('[ADB-battery-information] GET request error %s', err);
                     }
                     state = 'end';
                 });
@@ -105,41 +123,44 @@ var ReferenceStorage = class ReferenceStorage {
                         'device': row["Device"]
                     };
                 });
-                defReference = {
-                  'hash': downloader.hash,
-                  'devices': defReference,
-                };
                 state = 'saveFile';
             } catch (err) {
-                console.error('[ADB-battery-information] %s', err);
+                console.error('[ADB-battery-information] Parse error %s', err);
                 state = 'end';
             }
         }
         if (state == 'saveFile') {
-            let fout = Gio.File.new_for_path(Me.path + GLib.DIR_SEPARATOR_S + DEVICES_DB_FILE);
+            let fout = Gio.File.new_for_path(Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE);
             let [ok, etag] = fout.replace_contents(
-                JSON.stringify(defReference, null, 2),
+                JSON.stringify(
+                    {
+                        'hash': downloader.hash,
+                        'devices': defReference,
+                    },
+                    null,
+                    2,
+                ),
                 null,
                 false,
                 Gio.FileCreateFlags.REPLACE_DESTINATION,
                 null,
             );
             if (ok) {
-                this._defReference = defReference;
-                this._updated = true;
+                this._reference = defReference;
+                this._hash = downloader.hash;
                 console.log(
                     '[ADB-battery-information] Devices reference updated.',
                 );
             } else {
                 console.error(
-                    "[ADB-battery-information] Can't save file %s",
-                    Me.path + GLib.DIR_SEPARATOR_S + DEVICES_DB_FILE,
+                    "[ADB-battery-information] Can't save to file %s",
+                    Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
                 );
             }
             GLib.free(etag);
         }
         console.log(
-            '[ADB-battery-information] Devices reference update finished.',
+            '[ADB-battery-information] Devices reference update complete.',
         );
     }
 }

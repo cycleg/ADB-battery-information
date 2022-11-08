@@ -21,23 +21,16 @@ const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
 const _ = Gettext.gettext;
 
-let devReference;
-let panelButton;
-let panelBaloon;
-let refreshInfoTimeout;
-let visible;
+let storage = null;
+let panelButton = null;
+let panelBaloon = null;
+let refreshInfoTask = null;
+let refreshStorageTask = null;
+let visible = false;
 let devicesData = new Map();
 
 function init () {
-    var [ok, contents] = GLib.file_get_contents(Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE);
-    devReference = {
-      'hash': '',
-      'devices': {},
-    };
-    if (ok) {
-        devReference = JSON.parse(contents);
-    }
-    visible = false;
+    storage = new ReferenceStorage();
     // start adb daemon
     GLib.spawn_async(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null, null);
 }
@@ -69,16 +62,6 @@ function getModel(deviceId) {
     var cmd = 'adb -s ' + deviceId + ' shell getprop ro.product.model';
     var [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
     return out.toString().replace("\n", "");
-}
-
-function getDevDescription(model) {
-    var ret = model;
-    if (ret in devReference['devices']) {
-        let brand = devReference['devices'][ret]["brand"];
-        let name = devReference['devices'][ret]["name"];
-        ret = brand + ((name !== "") ? " " + name : "");
-    }
-    return (ret !== "") ? ret : model;
 }
 
 function getChargeInfo(deviceId) {
@@ -122,7 +105,7 @@ function getChargeInfo(deviceId) {
         devData.model = getModel(deviceId);
     }
     devicesData.set(deviceId, devData);
-    return getDevDescription(devData.model) + ": " + message;
+    return storage.getDevDescription(devData.model) + ": " + message;
 }
 
 function showInfo() {
@@ -232,15 +215,31 @@ function updateBattery() {
 }
 
 function enable() {
+    if (storage.empty) {
+        storage.loadFromCache();
+    }
+    if (/*storage.empty &&*/ !refreshStorageTask) {
+        refreshStorageTask = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            storage.loadRemote();
+            refreshStorageTask = null;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
     updateBattery();
-    refreshInfoTimeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
+    refreshInfoTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
 }
 
 function disable() {
     hideInfo();
     devicesData.forEach(e => e.clean());
-    GLib.Source.remove(refreshInfoTimeout);
-    refreshInfoTimeout = null;
+    if (refreshStorageTask) {
+        GLib.Source.remove(refreshStorageTask);
+        refreshStorageTask = null;
+    }
+    if (refreshInfoTask) {
+        GLib.Source.remove(refreshInfoTask);
+        refreshInfoTask = null;
+    }
 }
 
 function txtToMap(str) {
