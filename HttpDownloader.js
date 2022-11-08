@@ -23,6 +23,10 @@ export default class HttpDownloader {
         return this._hash;
     }
 
+    get request() {
+        return this._request;
+    }
+
     _loopQuit() {
         if (this._loop) {
             this._loop.quit();
@@ -64,9 +68,6 @@ export default class HttpDownloader {
         if (this._request.status_code == 200) {
             let response_headers = this._request.get_response_headers();
             response_headers.foreach((name, value) => {
-                if (this._request.get_method() == 'HEAD') {
-                    console.log(name, ':', value);
-                }
                 if ((name == 'x-goog-hash') && (value.split('=')[0] == 'md5')) {
                     this._hash = value.split('=')[1] + '==';
                 }
