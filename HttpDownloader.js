@@ -31,6 +31,7 @@ export default class HttpDownloader {
 
     reset() {
         this._request = null;
+        this._httpMethod = '';
         this._charset = '';
         this._hash = '';
         this._data = null;
@@ -49,10 +50,11 @@ export default class HttpDownloader {
         this._loopQuit()
     }
 
-    send_async_callback(self, res) {
+    send_async_callback(session, task) {
+        // session == this._httpSession
         let inputStream;
         try {
-            inputStream = this._httpSession.send_finish(res);
+            inputStream = this._httpSession.send_finish(task);
         } catch (err) {
             this._success = false;
             this._error = err;
@@ -62,7 +64,9 @@ export default class HttpDownloader {
         if (this._request.status_code == 200) {
             let response_headers = this._request.get_response_headers();
             response_headers.foreach((name, value) => {
-                console.log(name, ':', value);
+                if (this._method == 'HEAD') {
+                    console.log(name, ':', value);
+                }
                 if ((name == 'x-goog-hash') && (value.split('=')[0] == 'md5')) {
                     this._hash = value.split('=')[1] + '==';
                 }
@@ -70,15 +74,19 @@ export default class HttpDownloader {
                     this._charset = value.split('; ')[1].split('=')[1];
                 }
             });
-            // charset = response_headers.get_one('Content-Type').split('; ')[1].split('=')[1];
-            let outputStream = Gio.MemoryOutputStream.new_resizable();
-            outputStream.splice_async(
-                inputStream,
-                Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
-                GLib.PRIORITY_DEFAULT,
-                null,
-                this.splice_callback.bind(this),
-            );
+            if (this._method == 'GET') {
+                // charset = response_headers.get_one('Content-Type').split('; ')[1].split('=')[1];
+                let outputStream = Gio.MemoryOutputStream.new_resizable();
+                outputStream.splice_async(
+                    inputStream,
+                    Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
+                    GLib.PRIORITY_DEFAULT,
+                    null,
+                    this.splice_callback.bind(this),
+                );
+            } else {
+                this._loopQuit()
+            }
         } else {
             this._success = false;
             this._error = this._request;
@@ -86,11 +94,10 @@ export default class HttpDownloader {
         }
     }
 
-    get(url) {
-        this.reset();
+    _send(url) {
         try {
             this._request = new Soup.Message({
-                method: 'GET',
+                method: this._method,
                 uri: GLib.Uri.parse(url, GLib.UriFlags.NONE),
             });
             this._httpSession.send_async(
@@ -113,5 +120,17 @@ export default class HttpDownloader {
                 reject(this._error);
             }
         });
+    }
+
+    head(url) {
+        this.reset();
+        this._method = 'HEAD';
+        return this._send(url);
+    }
+
+    get(url) {
+        this.reset();
+        this._method = 'GET';
+        return this._send(url);
     }
 }
