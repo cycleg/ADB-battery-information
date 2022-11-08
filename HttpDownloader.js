@@ -64,7 +64,7 @@ export default class HttpDownloader {
         if (this._request.status_code == 200) {
             let response_headers = this._request.get_response_headers();
             response_headers.foreach((name, value) => {
-                if (this._method == 'HEAD') {
+                if (this._request.get_method() == 'HEAD') {
                     console.log(name, ':', value);
                 }
                 if ((name == 'x-goog-hash') && (value.split('=')[0] == 'md5')) {
@@ -74,7 +74,7 @@ export default class HttpDownloader {
                     this._charset = value.split('; ')[1].split('=')[1];
                 }
             });
-            if (this._method == 'GET') {
+            if (this._request.get_method() == 'GET') {
                 // charset = response_headers.get_one('Content-Type').split('; ')[1].split('=')[1];
                 let outputStream = Gio.MemoryOutputStream.new_resizable();
                 outputStream.splice_async(
@@ -94,10 +94,11 @@ export default class HttpDownloader {
         }
     }
 
-    _send(url) {
+    _send(url, method) {
+        this.reset();
         try {
             this._request = new Soup.Message({
-                method: this._method,
+                method: method,
                 uri: GLib.Uri.parse(url, GLib.UriFlags.NONE),
             });
             this._httpSession.send_async(
@@ -123,14 +124,10 @@ export default class HttpDownloader {
     }
 
     head(url) {
-        this.reset();
-        this._method = 'HEAD';
-        return this._send(url);
+        return this._send(url, 'HEAD');
     }
 
     get(url) {
-        this.reset();
-        this._method = 'GET';
-        return this._send(url);
+        return this._send(url, 'GET');
     }
 }
