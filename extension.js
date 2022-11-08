@@ -15,6 +15,8 @@ const Me = ExtensionUtils.getCurrentExtension();
 
 const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
 const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
+const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
+const CSV = Me.imports.CSV;
 
 const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);

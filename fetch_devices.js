@@ -13,8 +13,9 @@ const Me = ExtensionUtils.getCurrentExtension();
 
 const CSV = Me.imports.CSV;
 */
-import CSV from './CSV.mjs';
-import HttpDownloader from './HttpDownloader.js';
+imports.searchPath.push('./');
+const HttpDownloader = imports.HttpDownloader.HttpDownloader
+const CSV = imports.CSV
 
 var loop = GLib.MainLoop.new(null, false);
 var downloader = new HttpDownloader(loop);

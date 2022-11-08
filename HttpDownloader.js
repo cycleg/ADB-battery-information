@@ -4,7 +4,7 @@ const {Gio, GLib} = imports.gi;
 imports.gi.versions.Soup = "3.0"; // select version to import
 const Soup = imports.gi.Soup;
 
-export default class HttpDownloader {
+var HttpDownloader = class HttpDownloader {
     constructor(loop) {
         this._loop = loop;
         this._httpSession = new Soup.Session();

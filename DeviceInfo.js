@@ -1,4 +1,6 @@
-var DeviceInfo = class {
+'use strict';
+
+var DeviceInfo = class DeviceInfo {
     constructor() {
         this._model = "";
         this.clean()
