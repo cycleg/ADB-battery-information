@@ -15,8 +15,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 
 const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
 const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
-const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
-const CSV = Me.imports.CSV;
+const ReferenceStorage = Me.imports.ReferenceStorage.ReferenceStorage
 
 const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
@@ -30,7 +29,7 @@ let visible;
 let devicesData = new Map();
 
 function init () {
-    var [ok, contents] = GLib.file_get_contents(Me.path + GLib.DIR_SEPARATOR_S + 'devices.json');
+    var [ok, contents] = GLib.file_get_contents(Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE);
     devReference = {
       'hash': '',
       'devices': {},
