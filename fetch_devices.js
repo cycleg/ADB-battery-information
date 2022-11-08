@@ -42,6 +42,10 @@ doownloadComplete
                 'device': row["Device"]
             };
         });
+        defReference = {
+          'hash': downloader.hash,
+          'devices': defReference,
+        };
         // Me.path + GLib.DIR_SEPARATOR_S + DEVICES_DB_FILE
         let fout = Gio.File.new_for_path(DEVICES_DB_FILE);
         let [ok, etag] = fout.replace_contents(

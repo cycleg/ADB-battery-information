@@ -20,7 +20,7 @@ const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
 const _ = Gettext.gettext;
 
-let devDescriptions;
+let devReference;
 let panelButton;
 let panelBaloon;
 let refreshInfoTimeout;
@@ -29,10 +29,12 @@ let devicesData = new Map();
 
 function init () {
     var [ok, contents] = GLib.file_get_contents(Me.path + GLib.DIR_SEPARATOR_S + 'devices.json');
+    devReference = {
+      'hash': '',
+      'devices': {},
+    };
     if (ok) {
-        devDescriptions = JSON.parse(contents);
-    } else {
-        devDescriptions = {};
+        devReference = JSON.parse(contents);
     }
     visible = false;
     // start adb daemon
@@ -70,9 +72,9 @@ function getModel(deviceId) {
 
 function getDevDescription(model) {
     var ret = model;
-    if (ret in devDescriptions) {
-        let brand = devDescriptions[ret]["brand"];
-        let name = devDescriptions[ret]["name"];
+    if (ret in devReference['devices']) {
+        let brand = devReference['devices'][ret]["brand"];
+        let name = devReference['devices'][ret]["name"];
         ret = brand + ((name !== "") ? " " + name : "");
     }
     return (ret !== "") ? ret : model;
