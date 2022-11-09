@@ -27,7 +27,7 @@ var HttpDownloader = class HttpDownloader {
         return this._request;
     }
 
-    _loopQuit() {
+    _completeJob() {
         if (this._loop) {
             this._loop.quit();
         }
@@ -38,18 +38,6 @@ var HttpDownloader = class HttpDownloader {
         }
     }
 
-    reset() {
-        this._request = null;
-        this._httpMethod = '';
-        this._charset = '';
-        this._hash = '';
-        this._data = null;
-        this._success = true;
-        this._error = null;
-        this._resolve = null;
-        this._reject = null;
-    }
-
     _splice_callback(outputStream, result) {
         try {
             outputStream.splice_finish(result);
@@ -58,7 +46,7 @@ var HttpDownloader = class HttpDownloader {
             this._success = false;
             this._error = err;
         }
-        this._loopQuit()
+        this._completeJob()
     }
 
     _send_async_callback(session, task) {
@@ -69,7 +57,7 @@ var HttpDownloader = class HttpDownloader {
         } catch (err) {
             this._success = false;
             this._error = err;
-            this._loopQuit()
+            this._completeJob()
             return;
         }
         if (this._request.status_code == 200) {
@@ -93,12 +81,12 @@ var HttpDownloader = class HttpDownloader {
                     this._splice_callback.bind(this),
                 );
             } else {
-                this._loopQuit()
+                this._completeJob()
             }
         } else {
             this._success = false;
             this._error = this._request;
-            this._loopQuit()
+            this._completeJob()
         }
     }
 
@@ -125,6 +113,18 @@ var HttpDownloader = class HttpDownloader {
             this._error = err;
         }
         return new Promise(this._promiseFunctor.bind(this));
+    }
+
+    reset() {
+        this._request = null;
+        this._httpMethod = '';
+        this._charset = '';
+        this._hash = '';
+        this._data = null;
+        this._success = true;
+        this._error = null;
+        this._resolve = null;
+        this._reject = null;
     }
 
     head(url) {
