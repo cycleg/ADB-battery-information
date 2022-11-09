@@ -65,20 +65,21 @@ var ReferenceStorage = class ReferenceStorage {
             '[ADB-battery-information] Devices reference update from remote resource "%s".',
             ReferenceStorage.DEVICES_DB_URL,
         );
+        // state machine
         this._updateState = 'checkHash';
         this._downloader = new HttpDownloader(null);
         this._downloader.head(
             ReferenceStorage.DEVICES_DB_URL
         ).then(
-            this._onHashCheck.bind(this),
-            this._onError.bind(this),
+            this._smHashCheck.bind(this),
+            this._smFinalize.bind(this),
         ).then(
-            this._onFileLoaded.bind(this),
-            this._onError.bind(this),
+            this._smFileLoaded.bind(this),
+            this._smFinalize.bind(this),
         );
     }
 
-    _onHashCheck(data) {
+    _smHashCheck(data) {
         this._updateState = (this._downloader.hash == this._hash) ? 'end' : 'loadFile';
         if (this._updateState == 'end') {
             console.log(
@@ -91,7 +92,7 @@ var ReferenceStorage = class ReferenceStorage {
         return this._downloader.get(ReferenceStorage.DEVICES_DB_URL);
     }
 
-    _onFileLoaded(data) {
+    _smFileLoaded(data) {
         let defReference = {};
         try {
             const csvDialect = {
@@ -153,7 +154,7 @@ var ReferenceStorage = class ReferenceStorage {
         });
     }
 
-    _onError(err) {
+    _smFinalize(err) {
         if (this._updateState == 'checkHash') {
             if (err instanceof Soup.Message) {
                 console.error(
