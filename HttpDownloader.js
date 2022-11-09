@@ -31,6 +31,11 @@ var HttpDownloader = class HttpDownloader {
         if (this._loop) {
             this._loop.quit();
         }
+        if (this._success) {
+            this._resolve(true);
+        } else {
+            this._reject(this._error);
+        }
     }
 
     reset() {
@@ -41,9 +46,11 @@ var HttpDownloader = class HttpDownloader {
         this._data = null;
         this._success = true;
         this._error = null;
+        this._resolve = null;
+        this._reject = null;
     }
 
-    splice_callback(outputStream, result) {
+    _splice_callback(outputStream, result) {
         try {
             outputStream.splice_finish(result);
             this._data = outputStream.steal_as_bytes();
@@ -54,7 +61,7 @@ var HttpDownloader = class HttpDownloader {
         this._loopQuit()
     }
 
-    send_async_callback(session, task) {
+    _send_async_callback(session, task) {
         // session == this._httpSession
         let inputStream;
         try {
@@ -83,7 +90,7 @@ var HttpDownloader = class HttpDownloader {
                     Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
                     GLib.PRIORITY_DEFAULT,
                     null,
-                    this.splice_callback.bind(this),
+                    this._splice_callback.bind(this),
                 );
             } else {
                 this._loopQuit()
@@ -93,6 +100,11 @@ var HttpDownloader = class HttpDownloader {
             this._error = this._request;
             this._loopQuit()
         }
+    }
+
+    _promiseFunctor(resolve, reject) {
+        this._resolve = resolve;
+        this._reject = reject;
     }
 
     _send(url, method) {
@@ -106,22 +118,13 @@ var HttpDownloader = class HttpDownloader {
                 this._request,
                 null,
                 null,
-                this.send_async_callback.bind(this),
+                this._send_async_callback.bind(this),
             );
         } catch (err) {
             this._success = false;
             this._error = err;
         }
-        if (this._success && this._loop) {
-            this._loop.run();
-        }
-        return new Promise((resolve, reject) => {
-            if (this._success) {
-                resolve(true);
-            } else {
-                reject(this._error);
-            }
-        });
+        return new Promise(this._promiseFunctor.bind(this));
     }
 
     head(url) {

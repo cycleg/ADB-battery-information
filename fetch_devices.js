@@ -17,11 +17,11 @@ imports.searchPath.push('./');
 const HttpDownloader = imports.HttpDownloader.HttpDownloader
 const CSV = imports.CSV
 
-var loop = GLib.MainLoop.new(null, false);
-var downloader = new HttpDownloader(loop);
-var doownloadComplete = downloader.get(DEVICES_DB_URL);
-doownloadComplete
-    .then(function(data) {
+let loop = GLib.MainLoop.new(null, false);
+let downloader = new HttpDownloader(loop);
+let doownloadComplete = downloader.get(DEVICES_DB_URL);
+doownloadComplete.then(
+    function(data) {
         if (downloader.request.get_method() == 'HEAD') {
             let response_headers = downloader.request.get_response_headers();
             response_headers.foreach((name, value) => {
@@ -66,11 +66,13 @@ doownloadComplete
             GLib.free(etag);
             console.log('Devices reference updated.')
         }
-    })
-    .catch(function(err) {
+    },
+    function(err) {
         if (err instanceof Soup.Message) {
             console.error('"%s" download status: %d %s', DEVICES_DB_URL, err.status_code, err.reason_phrase);
         } else {
             console.error(err);
         }
-    });
+    }
+);
+loop.run();

@@ -36,16 +36,16 @@ function init () {
 }
 
 function getConnectedDevices() {
-    var devices = [];
-    var [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null);
+    let devices = [];
+    let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null);
     if (status !== 0) {
         return devices;
     }
-    var lines = out.toString().split("\n");
+    let lines = out.toString().split("\n");
     if (lines.length < 2) {
         return devices;
     }
-    for (var i = 1; i < lines.length; i++) {
+    for (let i = 1; i < lines.length; i++) {
         let parts = lines[i].split("\t");
         if (parts.length < 2) {
             continue;
@@ -59,24 +59,24 @@ function getConnectedDevices() {
 }
 
 function getModel(deviceId) {
-    var cmd = 'adb -s ' + deviceId + ' shell getprop ro.product.model';
-    var [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
+    let cmd = 'adb -s ' + deviceId + ' shell getprop ro.product.model';
+    let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
     return out.toString().replace("\n", "");
 }
 
 function getChargeInfo(deviceId) {
-    var cmd = 'adb -s ' + deviceId + ' shell dumpsys battery';
-    var [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
+    let cmd = 'adb -s ' + deviceId + ' shell dumpsys battery';
+    let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
     if (status !== 0) {
         return "";
     }
-    var result = txtToMap(out.toString());
+    let result = txtToMap(out.toString());
     if (result.size == 0) {
         return "";
     }
-    var currTimestamp = Math.floor(Date.now() / 1000);
-    var currLevel = result.has("level") ? result.get("level") : -1;
-    var devData = devicesData.get(deviceId)
+    let currTimestamp = Math.floor(Date.now() / 1000);
+    let currLevel = result.has("level") ? result.get("level") : -1;
+    let devData = devicesData.get(deviceId)
     if (devData.beginBatteryLevel == -1) {
         devData.beginBatteryLevel = currLevel;
         devData.beginTimestamp = currTimestamp;
@@ -97,7 +97,7 @@ function getChargeInfo(deviceId) {
             devData.refreshTimestamp = currTimestamp;
         }
     }
-    var message = ((currLevel > -1) ? "" + currLevel + "%" : _("getting info error")) + devData.lastEstimation;
+    let message = ((currLevel > -1) ? "" + currLevel + "%" : _("getting info error")) + devData.lastEstimation;
     if (currLevel == 100) {
         message = _("fully charged");
     }
@@ -157,7 +157,7 @@ function hideInfo() {
 }
 
 function updateBattery() {
-    var devices = getConnectedDevices();
+    let devices = getConnectedDevices();
     if (devices.length > 0) {
         let inCache = Array.from(devicesData.keys());
         // add new
@@ -218,10 +218,12 @@ function enable() {
     if (storage.empty) {
         storage.loadFromCache();
     }
-    if (/*storage.empty &&*/ !refreshStorageTask) {
+    if (storage.empty && !refreshStorageTask) {
         refreshStorageTask = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            console.log('[ADB-battery-information] enable() refreshStorageTask');
             storage.loadRemote();
             refreshStorageTask = null;
+            console.log('[ADB-battery-information] enable() refreshStorageTask complete');
             return GLib.SOURCE_REMOVE;
         });
     }
@@ -243,8 +245,8 @@ function disable() {
 }
 
 function txtToMap(str) {
-    var params = str.split("\n");
-    var dict = new Map();
+    let params = str.split("\n");
+    let dict = new Map();
     for (let i = 0; i < params.length; i++) {
         let parts = params[i].split(":");
         dict.set(parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
