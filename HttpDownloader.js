@@ -19,6 +19,10 @@ var HttpDownloader = class HttpDownloader {
         return this._data;
     }
 
+    get error() {
+        return this._error;
+    }
+
     get hash() {
         return this._hash;
     }
@@ -27,15 +31,20 @@ var HttpDownloader = class HttpDownloader {
         return this._request;
     }
 
+    get running() {
+        return this._running;
+    }
+
     _completeJob() {
         if (this._loop) {
             this._loop.quit();
         }
         if (this._success) {
-            this._resolve(true);
+            this._resolve(this);
         } else {
-            this._reject(this._error);
+            this._reject(this);
         }
+        this._running = false;
     }
 
     _splice_callback(outputStream, result) {
@@ -71,21 +80,25 @@ var HttpDownloader = class HttpDownloader {
                 }
             });
             if (this._request.get_method() == 'GET') {
-                // charset = response_headers.get_one('Content-Type').split('; ')[1].split('=')[1];
-                let outputStream = Gio.MemoryOutputStream.new_resizable();
-                outputStream.splice_async(
-                    inputStream,
-                    Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
-                    GLib.PRIORITY_DEFAULT,
-                    null,
-                    this._splice_callback.bind(this),
-                );
+                try {
+                    let outputStream = Gio.MemoryOutputStream.new_resizable();
+                    outputStream.splice_async(
+                        inputStream,
+                        Gio.OutputStreamSpliceFlags.CLOSE_TARGET,
+                        GLib.PRIORITY_DEFAULT,
+                        null,
+                        this._splice_callback.bind(this),
+                    );
+                } catch (err) {
+                    this._success = false;
+                    this._error = err;
+                    this._completeJob()
+                }
             } else {
                 this._completeJob()
             }
         } else {
             this._success = false;
-            this._error = this._request;
             this._completeJob()
         }
     }
@@ -93,26 +106,43 @@ var HttpDownloader = class HttpDownloader {
     _promiseFunctor(resolve, reject) {
         this._resolve = resolve;
         this._reject = reject;
+        if (this._success) {
+            this._send();
+        } else {
+            this._completeJob();
+        }
     }
 
-    _send(url, method) {
+    _prepare(url, method) {
+        if (this._running) {
+            return null;
+        }
         this.reset();
         try {
             this._request = new Soup.Message({
                 method: method,
                 uri: GLib.Uri.parse(url, GLib.UriFlags.NONE),
             });
+        } catch (err) {
+            this._success = false;
+            this._error = err;
+        }
+        return new Promise(this._promiseFunctor.bind(this));
+    }
+
+    _send() {
+        try {
             this._httpSession.send_async(
                 this._request,
                 null,
                 null,
                 this._send_async_callback.bind(this),
             );
+            this._running = true;
         } catch (err) {
             this._success = false;
             this._error = err;
         }
-        return new Promise(this._promiseFunctor.bind(this));
     }
 
     reset() {
@@ -125,13 +155,14 @@ var HttpDownloader = class HttpDownloader {
         this._error = null;
         this._resolve = null;
         this._reject = null;
+        this._running = false;
     }
 
     head(url) {
-        return this._send(url, 'HEAD');
+        return this._prepare(url, 'HEAD');
     }
 
     get(url) {
-        return this._send(url, 'GET');
+        return this._prepare(url, 'GET');
     }
 }

@@ -21,7 +21,7 @@ let loop = GLib.MainLoop.new(null, false);
 let downloader = new HttpDownloader(loop);
 let doownloadComplete = downloader.get(DEVICES_DB_URL);
 doownloadComplete.then(
-    function(data) {
+    function(downloader) {
         if (downloader.request.get_method() == 'HEAD') {
             let response_headers = downloader.request.get_response_headers();
             response_headers.foreach((name, value) => {
@@ -67,11 +67,16 @@ doownloadComplete.then(
             console.log('Devices reference updated.')
         }
     },
-    function(err) {
-        if (err instanceof Soup.Message) {
-            console.error('"%s" download status: %d %s', DEVICES_DB_URL, err.status_code, err.reason_phrase);
+    function(downloader) {
+        if (downloader.error) {
+            console.error(downloader.error);
         } else {
-            console.error(err);
+            console.error(
+                '"%s" download status: %d %s',
+                DEVICES_DB_URL,
+                downloader.request.status_code,
+                downloader.request.reason_phrase,
+            );
         }
     }
 );

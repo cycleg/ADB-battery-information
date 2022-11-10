@@ -18,7 +18,6 @@ var ReferenceStorage = class ReferenceStorage {
         this._reference = {}
         this._hash = '';
         this._updateState = 'end';
-        this._downloader = null;
     }
 
     get empty() {
@@ -65,35 +64,41 @@ var ReferenceStorage = class ReferenceStorage {
             '[ADB-battery-information] Devices reference update from remote resource "%s".',
             ReferenceStorage.DEVICES_DB_URL,
         );
-        // state machine
         this._updateState = 'checkHash';
-        this._downloader = new HttpDownloader(null);
-        this._downloader.head(
+        let downloader = new HttpDownloader(null);
+        downloader.head(
             ReferenceStorage.DEVICES_DB_URL
         ).then(
             this._smHashCheck.bind(this),
             this._smFinalize.bind(this),
-        ).then(
-            this._smFileLoaded.bind(this),
-            this._smFinalize.bind(this),
         );
     }
 
-    _smHashCheck(data) {
-        this._updateState = (this._downloader.hash == this._hash) ? 'end' : 'loadFile';
+    _smHashCheck(downloader) {
+        this._updateState = (downloader.hash == this._hash) ? 'end' : 'loadFile';
         if (this._updateState == 'end') {
             console.log(
                 '[ADB-battery-information] Remote resource not changed.',
             );
-            return new Promise(function(resolve, reject) {
-                reject(null);
-            });
+            this._smFinalize(downloader);
+        } else {
+            console.log(
+                '[ADB-battery-information] Downloading remote resource.',
+            );
+            downloader.get(
+                ReferenceStorage.DEVICES_DB_URL,
+            ).then(
+                this._smFileLoaded.bind(this),
+                this._smFinalize.bind(this),
+            );
         }
-        return this._downloader.get(ReferenceStorage.DEVICES_DB_URL);
     }
 
-    _smFileLoaded(data) {
-        let defReference = {};
+    _smFileLoaded(downloader) {
+        let devReference = {};
+        console.log(
+            '[ADB-battery-information] Remote resource successfully loaded.',
+        );
         try {
             const csvDialect = {
                 quote: '"',
@@ -101,13 +106,13 @@ var ReferenceStorage = class ReferenceStorage {
                 ignoreSpacesAfterQuotedString: true,
                 linefeedBeforeEOF: true,
             };
-            let decoder = new TextDecoder(this._downloader.charset);
+            let decoder = new TextDecoder(downloader.charset);
             let parsed = CSV.parse(
-                decoder.decode(this._downloader.data.toArray()),
+                decoder.decode(downloader.data.toArray()),
                 csvDialect,
             );
             parsed.mappedRows.forEach(function(row) {
-                defReference[row["Model"]] = {
+                devReference[row["Model"]] = {
                     'brand': row["﻿Retail Branding"],
                     'name': row["Marketing Name"],
                     'device': row["Device"]
@@ -123,8 +128,8 @@ var ReferenceStorage = class ReferenceStorage {
             let [ok, etag] = fout.replace_contents(
                 JSON.stringify(
                     {
-                        'hash': this._downloader.hash,
-                        'devices': defReference,
+                        'hash': downloader.hash,
+                        'devices': devReference,
                     },
                     null,
                     2,
@@ -136,7 +141,7 @@ var ReferenceStorage = class ReferenceStorage {
             );
             if (ok) {
                 this._reference = devReference;
-                this._hash = this._downloader.hash;
+                this._hash = downloader.hash;
                 console.log(
                     '[ADB-battery-information] Devices reference saved.',
                 );
@@ -149,39 +154,37 @@ var ReferenceStorage = class ReferenceStorage {
             GLib.free(etag);
             this._updateState = 'end';
         }
-        return new Promise(function(resolve, reject) {
-            reject(null);
-        });
+        this._smFinalize(downloader);
     }
 
-    _smFinalize(err) {
+    _smFinalize(downloader) {
         if (this._updateState == 'checkHash') {
-            if (err instanceof Soup.Message) {
+            if (downloader.error) {
                 console.error(
-                    '[ADB-battery-information] "%s" HEAD status: %d %s',
-                    ReferenceStorage.DEVICES_DB_URL,
-                    err.status_code,
-                    err.reason_phrase,
+                    '[ADB-battery-information] Check remote resource error %s',
+                    downloader.error,
                 );
             } else {
-                console.error('[ADB-battery-information] HEAD request error %s', err);
+                console.error(
+                    '[ADB-battery-information] Remote resource status: %d %s',
+                    downloader.request.status_code,
+                    downloader.request.reason_phrase,
+                );
             }
             this._updateState = 'end';
         }
         if (this._updateState == 'loadFile') {
-            if (err instanceof Soup.Message) {
-                console.error(
-                    '[ADB-battery-information] Remote resource download status: %d %s',
-                    ReferenceStorage.DEVICES_DB_URL,
-                    err.status_code,
-                    err.reason_phrase,
-                );
+            if (downloader.error) {
+                console.error('[ADB-battery-information] Remote resource loading error %s', downloader.error);
             } else {
-                console.error('[ADB-battery-information] GET request error %s', err);
+                console.error(
+                    '[ADB-battery-information] Remote resource loading status: %d %s',
+                    downloader.request.status_code,
+                    downloader.request.reason_phrase,
+                );
             }
             this._updateState = 'end';
         }
-        this._downloader = null;
         console.log(
             '[ADB-battery-information] Devices reference update complete.',
         );
