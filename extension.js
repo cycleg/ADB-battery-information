@@ -220,10 +220,8 @@ function enable() {
     }
     if (storage.empty && !refreshStorageTask) {
         refreshStorageTask = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            console.log('[ADB-battery-information] enable() refreshStorageTask');
             storage.loadRemote();
             refreshStorageTask = null;
-            console.log('[ADB-battery-information] enable() refreshStorageTask complete');
             return GLib.SOURCE_REMOVE;
         });
     }
