@@ -66,7 +66,8 @@ doownloadComplete.then(
             GLib.free(etag);
             console.log('Devices reference updated.')
         }
-    },
+    }
+).catch(
     function(downloader) {
         if (downloader.error) {
             console.error(downloader.error);
@@ -78,6 +79,7 @@ doownloadComplete.then(
                 downloader.request.reason_phrase,
             );
         }
+        loop.quit();
     }
 );
 loop.run();

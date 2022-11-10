@@ -36,7 +36,14 @@ var ReferenceStorage = class ReferenceStorage {
 
     loadFromCache() {
         const cache = Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
-        let [ok, contents] = GLib.file_get_contents(cache);
+        let ok;
+        let contents;
+        try {
+            [ok, contents] = GLib.file_get_contents(cache);
+        } catch(err) {
+            console.warn('[ADB-battery-information] Devices reference cache loading error: %s', err);
+            return;
+        }
         if (ok) {
             let devReference = JSON.parse(contents);
             this._reference = devReference['devices'];
@@ -165,7 +172,7 @@ var ReferenceStorage = class ReferenceStorage {
         if (this._updateState == 'checkHash') {
             if (downloader.error) {
                 console.error(
-                    '[ADB-battery-information] Check remote resource error %s',
+                    '[ADB-battery-information] Check remote resource error: %s',
                     downloader.error,
                 );
             } else {
@@ -179,7 +186,7 @@ var ReferenceStorage = class ReferenceStorage {
         }
         if (this._updateState == 'loadFile') {
             if (downloader.error) {
-                console.error('[ADB-battery-information] Remote resource loading error %s', downloader.error);
+                console.error('[ADB-battery-information] Remote resource loading error: %s', downloader.error);
             } else {
                 console.error(
                     '[ADB-battery-information] Remote resource loading status: %d %s',

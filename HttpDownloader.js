@@ -69,7 +69,7 @@ var HttpDownloader = class HttpDownloader {
             this._completeJob()
             return;
         }
-        if (this._request.status_code == 200) {
+        if (this._request.status_code == Soup.Status.OK) {
             let response_headers = this._request.get_response_headers();
             response_headers.foreach((name, value) => {
                 if ((name == 'x-goog-hash') && (value.split('=')[0] == 'md5')) {
@@ -118,14 +118,10 @@ var HttpDownloader = class HttpDownloader {
             return null;
         }
         this.reset();
-        try {
-            this._request = new Soup.Message({
-                method: method,
-                uri: GLib.Uri.parse(url, GLib.UriFlags.NONE),
-            });
-        } catch (err) {
+        this._request = Soup.Message.new(method, url);
+        if (!this._request) {
             this._success = false;
-            this._error = err;
+            this._error = 'bad URL ' + url;
         }
         return new Promise(this._promiseFunctor.bind(this));
     }
