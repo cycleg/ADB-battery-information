@@ -20,6 +20,10 @@ var ReferenceStorage = class ReferenceStorage {
         this._updateState = 'end';
     }
 
+    get _cacheFile() {
+        return Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
+    }
+
     get empty() {
         return this._hash == '';
     }
@@ -35,7 +39,7 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     loadFromCache() {
-        const cache = Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
+        const cache = this._cacheFile;
         let ok;
         let contents;
         if (!GLib.file_test(cache, GLib.FileTest.IS_REGULAR)) {
@@ -100,7 +104,7 @@ var ReferenceStorage = class ReferenceStorage {
             });
         }
         console.log(
-            '[ADB-battery-information] Downloading remote resource.',
+            '[ADB-battery-information] Downloading remote resource...',
         );
         return downloader.get(ReferenceStorage.DEVICES_DB_URL);
     }
@@ -135,7 +139,7 @@ var ReferenceStorage = class ReferenceStorage {
             this._updateState = 'end';
         }
         if (this._updateState == 'saveFile') {
-            let fout = Gio.File.new_for_path(Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE);
+            let fout = Gio.File.new_for_path(this._cacheFile);
             let [ok, etag] = fout.replace_contents(
                 JSON.stringify(
                     {
@@ -154,11 +158,11 @@ var ReferenceStorage = class ReferenceStorage {
                 this._reference = devReference;
                 this._hash = downloader.hash;
                 console.log(
-                    '[ADB-battery-information] Devices reference saved.',
+                    '[ADB-battery-information] Devices reference cached.',
                 );
             } else {
                 console.error(
-                    "[ADB-battery-information] Can't save to file %s",
+                    "[ADB-battery-information] Can't save reference to file %s",
                     Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
                 );
             }
