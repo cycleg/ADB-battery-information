@@ -38,6 +38,10 @@ var ReferenceStorage = class ReferenceStorage {
         const cache = Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
         let ok;
         let contents;
+        if (!GLib.file_test(cache, GLib.FileTest.IS_REGULAR)) {
+            console.log('[ADB-battery-information] Devices reference cache "%s" not found.', cache);
+            return
+        }
         try {
             [ok, contents] = GLib.file_get_contents(cache);
         } catch(err) {
