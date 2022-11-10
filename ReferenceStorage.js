@@ -66,35 +66,35 @@ var ReferenceStorage = class ReferenceStorage {
         );
         this._updateState = 'checkHash';
         let downloader = new HttpDownloader(null);
+        // simple state machine
         downloader.head(
             ReferenceStorage.DEVICES_DB_URL
         ).then(
-            this._smHashCheck.bind(this),
+            this._smCheckHash.bind(this),
+        ).then(
+            this._smLoadFile.bind(this),
+        ).catch(
             this._smFinalize.bind(this),
         );
     }
 
-    _smHashCheck(downloader) {
+    _smCheckHash(downloader) {
         this._updateState = (downloader.hash == this._hash) ? 'end' : 'loadFile';
         if (this._updateState == 'end') {
             console.log(
                 '[ADB-battery-information] Remote resource not changed.',
             );
-            this._smFinalize(downloader);
-        } else {
-            console.log(
-                '[ADB-battery-information] Downloading remote resource.',
-            );
-            downloader.get(
-                ReferenceStorage.DEVICES_DB_URL,
-            ).then(
-                this._smFileLoaded.bind(this),
-                this._smFinalize.bind(this),
-            );
+            return new Promise((resolve, reject) => {
+                reject(downloader);
+            });
         }
+        console.log(
+            '[ADB-battery-information] Downloading remote resource.',
+        );
+        return downloader.get(ReferenceStorage.DEVICES_DB_URL);
     }
 
-    _smFileLoaded(downloader) {
+    _smLoadFile(downloader) {
         let devReference = {};
         console.log(
             '[ADB-battery-information] Remote resource successfully loaded.',
@@ -154,7 +154,11 @@ var ReferenceStorage = class ReferenceStorage {
             GLib.free(etag);
             this._updateState = 'end';
         }
-        this._smFinalize(downloader);
+        return new Promise((resolve, reject) => {
+            reject(downloader);
+        });
+        // ...or simply call
+        // _smFinalize(downloader);
     }
 
     _smFinalize(downloader) {
