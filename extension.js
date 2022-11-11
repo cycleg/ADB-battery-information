@@ -25,8 +25,8 @@ const _ = Gettext.gettext;
 let storage = null;
 let panelButton = null;
 let panelBaloon = null;
+let firstEnable = true;
 let refreshInfoTask = null;
-let refreshStorageTask = null;
 let visible = false;
 let devicesData = new Map();
 
@@ -223,25 +223,23 @@ function enable() {
         storage.loadFromFile();
         storage.saveGSettings();
     }
-    if (storage.empty && !refreshStorageTask) {
-        refreshStorageTask = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+    if (storage.empty || firstEnable) {
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             storage.loadRemote();
-            refreshStorageTask = null;
             return GLib.SOURCE_REMOVE;
         });
     }
     storage.saveFileIfNotExists();
     updateBattery();
     refreshInfoTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
+    if (firstEnable) {
+        firstEnable = false;
+    }
 }
 
 function disable() {
     hideInfo();
     devicesData.forEach(e => e.clean());
-    if (refreshStorageTask) {
-        GLib.Source.remove(refreshStorageTask);
-        refreshStorageTask = null;
-    }
     if (refreshInfoTask) {
         GLib.Source.remove(refreshInfoTask);
         refreshInfoTask = null;
