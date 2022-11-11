@@ -5,6 +5,7 @@ const EstimatePeriod = 60;
 // info refresh period
 const RefreshPeriod = 10;
 
+const ByteArray = imports.byteArray;
 const {Clutter, Gio, GLib, St} = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
@@ -41,7 +42,7 @@ function getConnectedDevices() {
     if (status !== 0) {
         return devices;
     }
-    let lines = out.toString().split("\n");
+    let lines = ByteArray.toString(out).split("\n");
     if (lines.length < 2) {
         return devices;
     }
@@ -61,7 +62,7 @@ function getConnectedDevices() {
 function getModel(deviceId) {
     let cmd = 'adb -s ' + deviceId + ' shell getprop ro.product.model';
     let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
-    return out.toString().replace("\n", "");
+    return ByteArray.toString(out).replace("\n", "");
 }
 
 function getChargeInfo(deviceId) {
@@ -70,7 +71,7 @@ function getChargeInfo(deviceId) {
     if (status !== 0) {
         return "";
     }
-    let result = txtToMap(out.toString());
+    let result = txtToMap(ByteArray.toString(out));
     if (result.size == 0) {
         return "";
     }
@@ -216,7 +217,11 @@ function updateBattery() {
 
 function enable() {
     if (storage.empty) {
-        storage.loadFromCache();
+        storage.loadGSettings();
+    }
+    if (storage.empty) {
+        storage.loadFromFile();
+        storage.saveGSettings();
     }
     if (storage.empty && !refreshStorageTask) {
         refreshStorageTask = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
@@ -225,6 +230,7 @@ function enable() {
             return GLib.SOURCE_REMOVE;
         });
     }
+    storage.saveFileIfNotExists();
     updateBattery();
     refreshInfoTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
 }

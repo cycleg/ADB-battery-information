@@ -13,6 +13,7 @@ const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
 var ReferenceStorage = class ReferenceStorage {
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
+    static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb-battery-info';
 
     constructor() {
         this._reference = {}
@@ -38,7 +39,7 @@ var ReferenceStorage = class ReferenceStorage {
         return (ret !== "") ? ret : model;
     }
 
-    loadFromCache() {
+    loadFromFile() {
         const cache = this._cacheFile;
         let ok;
         let contents;
@@ -65,6 +66,52 @@ var ReferenceStorage = class ReferenceStorage {
                 '[ADB-battery-information] Cached devices reference not loaded from "%s".',
                 cache,
             );
+        }
+    }
+
+    loadGSettings() {
+        let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
+        this._hash = settings.get_string('device-reference-hash');
+        this._reference = settings.get_value('device-reference-items').deep_unpack();
+    }
+
+    saveGSettings() {
+        let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
+        settings.set_string('device-reference-hash', this._hash);
+        let devReference = settings.get_value('device-reference-items');
+        settings.set_value('device-reference-items', new GLib.Variant(devReference.get_type_string(), this._reference));
+        settings.sync();
+    }
+
+    _saveFile(hash, devices) {
+        let fout = Gio.File.new_for_path(this._cacheFile);
+        let [ok, etag] = fout.replace_contents(
+            JSON.stringify(
+                {
+                    'hash': hash,
+                    'devices': devices,
+                },
+                null,
+                2,
+            ),
+            null,
+            false,
+            Gio.FileCreateFlags.REPLACE_DESTINATION,
+            null,
+        );
+        GLib.free(etag);
+        return ok;
+    }
+
+    saveFileIfNotExists() {
+        if (!GLib.file_test(this._cacheFile, GLib.FileTest.IS_REGULAR)) {
+            let ok = this._saveFile(this._hash, this._reference);
+            if (!ok) {
+                console.error(
+                    "[ADB-battery-information] Can't save reference to file %s",
+                    Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
+                );
+            }
         }
     }
 
@@ -139,24 +186,10 @@ var ReferenceStorage = class ReferenceStorage {
             this._updateState = 'end';
         }
         if (this._updateState == 'saveFile') {
-            let fout = Gio.File.new_for_path(this._cacheFile);
-            let [ok, etag] = fout.replace_contents(
-                JSON.stringify(
-                    {
-                        'hash': downloader.hash,
-                        'devices': devReference,
-                    },
-                    null,
-                    2,
-                ),
-                null,
-                false,
-                Gio.FileCreateFlags.REPLACE_DESTINATION,
-                null,
-            );
+            this._reference = devReference;
+            this._hash = downloader.hash;
+            let ok = this._saveFile(downloader.hash, devReference);
             if (ok) {
-                this._reference = devReference;
-                this._hash = downloader.hash;
                 console.log(
                     '[ADB-battery-information] Devices reference cached.',
                 );
@@ -166,7 +199,7 @@ var ReferenceStorage = class ReferenceStorage {
                     Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
                 );
             }
-            GLib.free(etag);
+            this.saveGSettings();
             this._updateState = 'end';
         }
         return new Promise((resolve, reject) => {

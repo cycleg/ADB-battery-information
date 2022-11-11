@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.adb-battery-info" path="/org/gnome/shell/extensions/adb-battery-info/">
+    <!-- See also: https://docs.gtk.org/glib/gvariant-format-strings.html -->
+    <key name="device-reference-hash" type="s">
+      <default>''</default>
+    </key>
+    <key name="device-reference-items" type="a{sa{ss}}">
+      <default>{}</default>
+    </key>
+  </schema>
+</schemalist>
