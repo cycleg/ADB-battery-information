@@ -5,8 +5,7 @@ imports.gi.versions.Soup = "3.0"; // select version to import
 const Soup = imports.gi.Soup;
 
 var HttpDownloader = class HttpDownloader {
-    constructor(loop) {
-        this._loop = loop;
+    constructor() {
         this._httpSession = new Soup.Session();
         this.reset();
     }
@@ -36,9 +35,6 @@ var HttpDownloader = class HttpDownloader {
     }
 
     _completeJob() {
-        if (this._loop) {
-            this._loop.quit();
-        }
         if (this._success) {
             this._resolve(this);
         } else {

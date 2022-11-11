@@ -18,7 +18,7 @@ const HttpDownloader = imports.HttpDownloader.HttpDownloader
 const CSV = imports.CSV
 
 let loop = GLib.MainLoop.new(null, false);
-let downloader = new HttpDownloader(loop);
+let downloader = new HttpDownloader();
 let doownloadComplete = downloader.get(DEVICES_DB_URL);
 doownloadComplete.then(
     function(downloader) {
@@ -79,7 +79,8 @@ doownloadComplete.then(
                 downloader.request.reason_phrase,
             );
         }
-        loop.quit();
     }
-);
+).finally(() => {
+    loop.quit();
+});
 loop.run();

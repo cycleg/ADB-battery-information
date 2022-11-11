@@ -80,7 +80,7 @@ var ReferenceStorage = class ReferenceStorage {
             ReferenceStorage.DEVICES_DB_URL,
         );
         this._updateState = 'checkHash';
-        let downloader = new HttpDownloader(null);
+        let downloader = new HttpDownloader();
         // simple state machine
         downloader.head(
             ReferenceStorage.DEVICES_DB_URL
