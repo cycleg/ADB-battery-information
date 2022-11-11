@@ -80,7 +80,7 @@ var ReferenceStorage = class ReferenceStorage {
         settings.set_string('device-reference-hash', this._hash);
         let devReference = settings.get_value('device-reference-items');
         settings.set_value('device-reference-items', new GLib.Variant(devReference.get_type_string(), this._reference));
-        settings.sync();
+        Gio.Settings.sync();
     }
 
     _saveFile(hash, devices) {
@@ -104,11 +104,11 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     saveFileIfNotExists() {
-        if (!GLib.file_test(this._cacheFile, GLib.FileTest.IS_REGULAR)) {
-            let ok = this._saveFile(this._hash, this._reference);
-            if (!ok) {
+        if (!GLib.file_test(this._cacheFile, GLib.FileTest.IS_REGULAR) &&
+            (this._updateState == 'end')) {
+            if (!this._saveFile(this._hash, this._reference)) {
                 console.error(
-                    "[ADB-battery-information] Can't save reference to file %s",
+                    "[ADB-battery-information] Can't save devices reference to file %s",
                     Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
                 );
             }
@@ -195,7 +195,7 @@ var ReferenceStorage = class ReferenceStorage {
                 );
             } else {
                 console.error(
-                    "[ADB-battery-information] Can't save reference to file %s",
+                    "[ADB-battery-information] Can't save devices reference to file %s",
                     Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
                 );
             }
