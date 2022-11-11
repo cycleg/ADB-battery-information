@@ -13,7 +13,7 @@ const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
 var ReferenceStorage = class ReferenceStorage {
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
-    static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb-battery-info';
+    static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com';
 
     constructor() {
         this._reference = {}
