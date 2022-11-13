@@ -2,14 +2,27 @@
 <schemalist>
   <schema id="org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com" path="/org/gnome/shell/extensions/adb_bp@gnome_extensions.github.com/">
     <!-- See also: https://docs.gtk.org/glib/gvariant-format-strings.html -->
-    <key name="device-reference-hash" type="s">
+    <child name="device-reference" schema="org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference"/>
+  </schema>
+  <schema id="org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference" path="/org/gnome/shell/extensions/adb_bp@gnome_extensions.github.com/device-reference/">
+    <key name="hash" type="s">
       <default>''</default>
       <summary>Device reference MD5 hashsum</summary>
     </key>
-    <key name="device-reference-items" type="a{sa{ss}}">
+    <key name="brand" type="a{ss}">
       <default>{}</default>
-      <summary>Device reference</summary>
-      <description>Device descriptions by device model reference</description>
+      <summary>Device brand</summary>
+      <description>Device retail brand by device model reference</description>
+    </key>
+    <key name="name" type="a{ss}">
+      <default>{}</default>
+      <summary>Device name</summary>
+      <description>Device marketing name by device model reference</description>
+    </key>
+    <key name="device" type="a{ss}">
+      <default>{}</default>
+      <summary>Device</summary>
+      <description>Device by device model reference</description>
     </key>
   </schema>
 </schemalist>

@@ -42,17 +42,21 @@ doownloadComplete.then(
                 decoder.decode(downloader.data.toArray()),
                 csvDialect,
             );
-            let defReference = {};
+            let defReference = {
+               brand: {},
+               name: {},
+               device: {},
+            };
             parsed.mappedRows.forEach(function(row) {
-                defReference[row["Model"]] = {
-                    'brand': row["﻿Retail Branding"],
-                    'name': row["Marketing Name"],
-                    'device': row["Device"]
-                };
+                defReference.brand[row["Model"]] = row["﻿Retail Branding"];
+                defReference.name[row["Model"]] = row["Marketing Name"];
+                defReference.device[row["Model"]] = row["Device"];
             });
             defReference = {
-              'hash': downloader.hash,
-              'devices': defReference,
+              hash: downloader.hash,
+              brand: defReference.brand,
+              name: defReference.name,
+              device: defReference.device,
             };
             // Me.path + GLib.DIR_SEPARATOR_S + DEVICES_DB_FILE
             let fout = Gio.File.new_for_path(DEVICES_DB_FILE);

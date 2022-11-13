@@ -13,12 +13,11 @@ const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
 var ReferenceStorage = class ReferenceStorage {
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
-    static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com';
+    static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference';
 
     constructor() {
-        this._reference = {}
-        this._hash = '';
         this._updateState = 'end';
+        this._clear();
     }
 
     get _cacheFile() {
@@ -29,11 +28,20 @@ var ReferenceStorage = class ReferenceStorage {
         return this._hash == '';
     }
 
+    _clear() {
+        this._reference = {
+            brand: {},
+            name: {},
+            device: {},
+        };
+        this._hash = '';
+    }
+
     getDevDescription(model) {
         let ret = model;
-        if (ret in this._reference) {
-            let brand = this._reference[ret]["brand"];
-            let name = this._reference[ret]["name"];
+        if (ret in this._reference.brand) {
+            let brand = this._reference.brand[ret];
+            let name = this._reference.name[ret];
             ret = brand + ((name !== "") ? " " + name : "");
         }
         return (ret !== "") ? ret : model;
@@ -55,8 +63,10 @@ var ReferenceStorage = class ReferenceStorage {
         }
         if (ok) {
             let devReference = JSON.parse(contents);
-            this._reference = devReference['devices'];
-            this._hash = devReference['hash'];
+            ['brand', 'name', 'device'].forEach(attr => {
+                this._reference[attr] = devReference[attr];
+            });
+            this._hash = devReference.hash;
             console.log(
                 '[ADB-battery-information] Cached devices reference loaded from "%s".',
                 cache,
@@ -71,15 +81,23 @@ var ReferenceStorage = class ReferenceStorage {
 
     loadGSettings() {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
-        this._hash = settings.get_string('device-reference-hash');
-        this._reference = settings.get_value('device-reference-items').deep_unpack();
+        try {
+            this._hash = settings.get_string('hash');
+            ['brand', 'name', 'device'].forEach(attr => {
+                this._reference[attr] = settings.get_value(attr).deep_unpack();
+            });
+        } catch(err) {
+            this._clear();
+        }
     }
 
     saveGSettings() {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
-        settings.set_string('device-reference-hash', this._hash);
-        let devReference = settings.get_value('device-reference-items');
-        settings.set_value('device-reference-items', new GLib.Variant(devReference.get_type_string(), this._reference));
+        settings.set_string('hash', this._hash);
+        ['brand', 'name', 'device'].forEach(attr => {
+            let value = settings.get_value(attr);
+            settings.set_value(attr, new GLib.Variant(value.get_type_string(), this._reference[attr]));
+        });
         Gio.Settings.sync();
     }
 
@@ -88,8 +106,10 @@ var ReferenceStorage = class ReferenceStorage {
         let [ok, etag] = fout.replace_contents(
             JSON.stringify(
                 {
-                    'hash': hash,
-                    'devices': devices,
+                    hash: hash,
+                    brand: devices.brand,
+                    name: devices.name,
+                    device: devices.device,
                 },
                 null,
                 2,
@@ -157,7 +177,11 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     _smLoadFile(downloader) {
-        let devReference = {};
+        let devReference = {
+            brand: {},
+            name: {},
+            device: {},
+        };
         console.log(
             '[ADB-battery-information] Remote resource successfully loaded.',
         );
@@ -174,11 +198,9 @@ var ReferenceStorage = class ReferenceStorage {
                 csvDialect,
             );
             parsed.mappedRows.forEach(function(row) {
-                devReference[row["Model"]] = {
-                    'brand': row["﻿Retail Branding"],
-                    'name': row["Marketing Name"],
-                    'device': row["Device"]
-                };
+                devReference.brand[row["Model"]] = row["﻿Retail Branding"];
+                devReference.name[row["Model"]] = row["Marketing Name"];
+                devReference.device[row["Model"]] = row["Device"];
             });
             this._updateState = 'saveFile';
         } catch (err) {
