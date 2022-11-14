@@ -14,6 +14,13 @@ var ReferenceStorage = class ReferenceStorage {
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
     static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference';
+    static FIELDS = ['brand', 'name', 'device'];
+    static FIELDS_TO_CSV = {
+        'brand': '﻿Retail Branding',
+        'name': 'Marketing Name',
+        'device': 'Device',
+    };
+
 
     constructor() {
         this._updateState = 'end';
@@ -59,14 +66,11 @@ var ReferenceStorage = class ReferenceStorage {
         }
         if (ok) {
             let devReference = JSON.parse(contents);
-            ['brand', 'name', 'device'].forEach(attr => {
+            ReferenceStorage.FIELDS.forEach(attr => {
                 for (const [key, value] of Object.entries(devReference[attr])) {
                     if (!(key in this._reference)) {
-                        this._reference[key] = {
-                            brand: '',
-                            name: '',
-                            device: '',
-                        };
+                        this._reference[key] = {};
+                        ReferenceStorage.FIELDS.forEach(a => this._reference[key][a] = '');
                     }
                     this._reference[key][attr] = value;
                 }
@@ -88,15 +92,12 @@ var ReferenceStorage = class ReferenceStorage {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
         try {
             this._hash = settings.get_string('hash');
-            ['brand', 'name', 'device'].forEach(attr => {
+            ReferenceStorage.FIELDS.forEach(attr => {
                 let ref = settings.get_value(attr).deep_unpack();
                 for (const [key, value] of Object.entries(ref)) {
                     if (!(key in this._reference)) {
-                        this._reference[key] = {
-                            brand: '',
-                            name: '',
-                            device: '',
-                        };
+                        this._reference[key] = {};
+                        ReferenceStorage.FIELDS.forEach(a => this._reference[key][a] = '');
                     }
                     this._reference[key][attr] = value;
                 }
@@ -109,7 +110,7 @@ var ReferenceStorage = class ReferenceStorage {
     saveGSettings() {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
         settings.set_string('hash', this._hash);
-        ['brand', 'name', 'device'].forEach(attr => {
+        ReferenceStorage.FIELDS.forEach(attr => {
             let value = settings.get_value(attr);
             let ref = {};
             for (const [key, content] of Object.entries(this._reference)) {
@@ -123,11 +124,9 @@ var ReferenceStorage = class ReferenceStorage {
     _saveFile(hash, devices) {
         let content = {
             hash: hash,
-            brand: {},
-            name: {},
-            device: {},
         };
-        ['brand', 'name', 'device'].forEach(attr => {
+        ReferenceStorage.FIELDS.forEach(attr => content[attr] = {});
+        ReferenceStorage.FIELDS.forEach(attr => {
             for (const [key, value] of Object.entries(devices)) {
               content[attr][key] = value[attr];
             };
@@ -215,14 +214,10 @@ var ReferenceStorage = class ReferenceStorage {
                 csvDialect,
             );
             parsed.mappedRows.forEach(function(row) {
-                devReference[row["Model"]] = {
-                    brand: '',
-                    name: '',
-                    device: '',
-                };
-                devReference[row["Model"]].brand = row["﻿Retail Branding"];
-                devReference[row["Model"]].name = row["Marketing Name"];
-                devReference[row["Model"]].device = row["Device"];
+                devReference[row["Model"]] = {};
+                ReferenceStorage.FIELDS.forEach(
+                    attr => devReference[row["Model"]][attr] = row[ReferenceStorage.FIELDS_TO_CSV[attr]]
+                );
             });
             this._updateState = 'saveFile';
         } catch (err) {
