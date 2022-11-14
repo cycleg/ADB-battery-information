@@ -20,7 +20,12 @@ var ReferenceStorage = class ReferenceStorage {
         'name': 'Marketing Name',
         'device': 'Device',
     };
-
+    static CSV_DIALECT = {
+        quote: '"',
+        separators: ',',
+        ignoreSpacesAfterQuotedString: true,
+        linefeedBeforeEOF: true,
+    };
 
     constructor() {
         this._updateState = 'end';
@@ -202,16 +207,10 @@ var ReferenceStorage = class ReferenceStorage {
             '[ADB-battery-information] Remote resource successfully loaded.',
         );
         try {
-            const csvDialect = {
-                quote: '"',
-                separators: ',',
-                ignoreSpacesAfterQuotedString: true,
-                linefeedBeforeEOF: true,
-            };
             let decoder = new TextDecoder(downloader.charset);
             let parsed = CSV.parse(
                 decoder.decode(downloader.data.toArray()),
-                csvDialect,
+                ReferenceStorage.CSV_DIALECT,
             );
             parsed.mappedRows.forEach(function(row) {
                 devReference[row["Model"]] = {};
