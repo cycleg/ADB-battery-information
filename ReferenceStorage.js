@@ -29,19 +29,15 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     _clear() {
-        this._reference = {
-            brand: {},
-            name: {},
-            device: {},
-        };
+        this._reference = {};
         this._hash = '';
     }
 
     getDevDescription(model) {
         let ret = model;
-        if (ret in this._reference.brand) {
-            let brand = this._reference.brand[ret];
-            let name = this._reference.name[ret];
+        if (ret in this._reference) {
+            let brand = this._reference[ret].brand;
+            let name = this._reference[ret].name;
             ret = brand + ((name !== "") ? " " + name : "");
         }
         return (ret !== "") ? ret : model;
@@ -64,7 +60,16 @@ var ReferenceStorage = class ReferenceStorage {
         if (ok) {
             let devReference = JSON.parse(contents);
             ['brand', 'name', 'device'].forEach(attr => {
-                this._reference[attr] = devReference[attr];
+                for (const [key, value] of Object.entries(devReference[attr])) {
+                    if (!(key in this._reference)) {
+                        this._reference[key] = {
+                            brand: '',
+                            name: '',
+                            device: '',
+                        };
+                    }
+                    this._reference[key][attr] = value;
+                }
             });
             this._hash = devReference.hash;
             console.log(
@@ -84,7 +89,17 @@ var ReferenceStorage = class ReferenceStorage {
         try {
             this._hash = settings.get_string('hash');
             ['brand', 'name', 'device'].forEach(attr => {
-                this._reference[attr] = settings.get_value(attr).deep_unpack();
+                let ref = settings.get_value(attr).deep_unpack();
+                for (const [key, value] of Object.entries(ref)) {
+                    if (!(key in this._reference)) {
+                        this._reference[key] = {
+                            brand: '',
+                            name: '',
+                            device: '',
+                        };
+                    }
+                    this._reference[key][attr] = value;
+                }
             });
         } catch(err) {
             this._clear();
@@ -96,24 +111,30 @@ var ReferenceStorage = class ReferenceStorage {
         settings.set_string('hash', this._hash);
         ['brand', 'name', 'device'].forEach(attr => {
             let value = settings.get_value(attr);
-            settings.set_value(attr, new GLib.Variant(value.get_type_string(), this._reference[attr]));
+            let ref = {};
+            for (const [key, content] of Object.entries(this._reference)) {
+                ref[key] = content[attr]
+            }
+            settings.set_value(attr, GLib.Variant.new(value.get_type_string(), ref));
         });
         Gio.Settings.sync();
     }
 
     _saveFile(hash, devices) {
+        let content = {
+            hash: hash,
+            brand: {},
+            name: {},
+            device: {},
+        };
+        ['brand', 'name', 'device'].forEach(attr => {
+            for (const [key, value] of Object.entries(devices)) {
+              content[attr][key] = value[attr];
+            };
+        });
         let fout = Gio.File.new_for_path(this._cacheFile);
         let [ok, etag] = fout.replace_contents(
-            JSON.stringify(
-                {
-                    hash: hash,
-                    brand: devices.brand,
-                    name: devices.name,
-                    device: devices.device,
-                },
-                null,
-                2,
-            ),
+            JSON.stringify(content, null, 2),
             null,
             false,
             Gio.FileCreateFlags.REPLACE_DESTINATION,
@@ -177,11 +198,7 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     _smLoadFile(downloader) {
-        let devReference = {
-            brand: {},
-            name: {},
-            device: {},
-        };
+        let devReference = {};
         console.log(
             '[ADB-battery-information] Remote resource successfully loaded.',
         );
@@ -198,9 +215,14 @@ var ReferenceStorage = class ReferenceStorage {
                 csvDialect,
             );
             parsed.mappedRows.forEach(function(row) {
-                devReference.brand[row["Model"]] = row["﻿Retail Branding"];
-                devReference.name[row["Model"]] = row["Marketing Name"];
-                devReference.device[row["Model"]] = row["Device"];
+                devReference[row["Model"]] = {
+                    brand: '',
+                    name: '',
+                    device: '',
+                };
+                devReference[row["Model"]].brand = row["﻿Retail Branding"];
+                devReference[row["Model"]].name = row["Marketing Name"];
+                devReference[row["Model"]].device = row["Device"];
             });
             this._updateState = 'saveFile';
         } catch (err) {
@@ -210,7 +232,7 @@ var ReferenceStorage = class ReferenceStorage {
         if (this._updateState == 'saveFile') {
             this._reference = devReference;
             this._hash = downloader.hash;
-            let ok = this._saveFile(downloader.hash, devReference);
+            let ok = this._saveFile(this._hash, this._reference);
             if (ok) {
                 console.log(
                     '[ADB-battery-information] Devices reference cached.',

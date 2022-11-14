@@ -42,26 +42,32 @@ doownloadComplete.then(
                 decoder.decode(downloader.data.toArray()),
                 csvDialect,
             );
-            let defReference = {
-               brand: {},
-               name: {},
-               device: {},
-            };
+            let devReference = {};
             parsed.mappedRows.forEach(function(row) {
-                defReference.brand[row["Model"]] = row["﻿Retail Branding"];
-                defReference.name[row["Model"]] = row["Marketing Name"];
-                defReference.device[row["Model"]] = row["Device"];
+                devReference[row["Model"]] = {
+                    brand: '',
+                    name: '',
+                    device: '',
+                };
+                devReference[row["Model"]].brand = row["﻿Retail Branding"];
+                devReference[row["Model"]].name = row["Marketing Name"];
+                devReference[row["Model"]].device = row["Device"];
             });
-            defReference = {
+            let content = {
               hash: downloader.hash,
-              brand: defReference.brand,
-              name: defReference.name,
-              device: defReference.device,
+              brand: {},
+              name: {},
+              device: {},
             };
+            ['brand', 'name', 'device'].forEach(attr => {
+                for (const [key, value] of Object.entries(devReference)) {
+                  content[attr][key] = value[attr];
+                };
+            });
             // Me.path + GLib.DIR_SEPARATOR_S + DEVICES_DB_FILE
             let fout = Gio.File.new_for_path(DEVICES_DB_FILE);
             let [ok, etag] = fout.replace_contents(
-                JSON.stringify(defReference, null, 2),
+                JSON.stringify(content, null, 2),
                 null,
                 false,
                 Gio.FileCreateFlags.REPLACE_DESTINATION,
