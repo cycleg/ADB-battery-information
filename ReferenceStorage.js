@@ -1,5 +1,13 @@
 'use strict';
 
+// from unistd.h
+/* Values for the second argument to access().
+   These may be OR'd together.  */
+const R_OK = 4;   /* Test for read permission.  */
+const W_OK = 2;   /* Test for write permission.  */
+const X_OK = 1;   /* Test for execute permission.  */
+const F_OK = 0;   /* Test for existence.  */
+
 const {Gio, GLib} = imports.gi;
 imports.gi.versions.Soup = "3.0"; // select version to import
 const Soup = imports.gi.Soup;
@@ -59,14 +67,21 @@ var ReferenceStorage = class ReferenceStorage {
         const cache = this._cacheFile;
         let ok;
         let contents;
-        if (!GLib.file_test(cache, GLib.FileTest.IS_REGULAR)) {
-            console.log('[ADB-battery-information] Devices reference cache "%s" not found.', cache);
+        if (GLib.access(cache, F_OK | R_OK) == -1) {
+            console.log(
+                '[ADB-battery-information] Devices reference storage "%s" not exists or not readable.',
+                cache,
+            );
             return
         }
         try {
             [ok, contents] = GLib.file_get_contents(cache);
         } catch(err) {
-            console.warn('[ADB-battery-information] Devices reference cache loading error: %s', err);
+            console.warn(
+                '[ADB-battery-information] Devices reference storage "%s" loading error: %s',
+                cache,
+                err,
+            );
             return;
         }
         if (ok) {
@@ -82,12 +97,12 @@ var ReferenceStorage = class ReferenceStorage {
             });
             this._hash = devReference.hash;
             console.log(
-                '[ADB-battery-information] Cached devices reference loaded from "%s".',
+                '[ADB-battery-information] Stored devices reference loaded from "%s".',
                 cache,
             );
         } else {
             console.warn(
-                '[ADB-battery-information] Cached devices reference not loaded from "%s".',
+                '[ADB-battery-information] Stored devices reference not loaded from "%s".',
                 cache,
             );
         }
@@ -149,12 +164,12 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     saveFileIfNotExists() {
-        if (!GLib.file_test(this._cacheFile, GLib.FileTest.IS_REGULAR) &&
+        if (!GLib.file_test(this._cacheFile, GLib.FileTest.EXISTS) &&
             (this._updateState == 'end')) {
             if (!this._saveFile(this._hash, this._reference)) {
                 console.error(
-                    "[ADB-battery-information] Can't save devices reference to file %s",
-                    Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
+                    "[ADB-battery-information] Can't store devices reference to file \"%s\"",
+                    this._cacheFile,
                 );
             }
         }
@@ -229,12 +244,12 @@ var ReferenceStorage = class ReferenceStorage {
             let ok = this._saveFile(this._hash, this._reference);
             if (ok) {
                 console.log(
-                    '[ADB-battery-information] Devices reference cached.',
+                    '[ADB-battery-information] Devices reference stored.',
                 );
             } else {
                 console.error(
-                    "[ADB-battery-information] Can't save devices reference to file %s",
-                    Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE,
+                    "[ADB-battery-information] Can't save devices reference to file \"%s\"",
+                    this._cacheFile,
                 );
             }
             this.saveGSettings();
@@ -265,7 +280,10 @@ var ReferenceStorage = class ReferenceStorage {
         }
         if (this._updateState == 'loadFile') {
             if (downloader.error) {
-                console.error('[ADB-battery-information] Remote resource loading error: %s', downloader.error);
+                console.error(
+                    '[ADB-battery-information] Remote resource loading error: %s',
+                    downloader.error,
+                );
             } else {
                 console.error(
                     '[ADB-battery-information] Remote resource loading status: %d %s',

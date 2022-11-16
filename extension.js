@@ -34,7 +34,7 @@ function init () {
     storage = new ReferenceStorage();
     // start adb daemon
     GLib.spawn_async(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null);
-    console.log('[ADB-battery-information] Applet init from %s', Me.path);
+    console.log('[ADB-battery-information] --- Init from "%s" ---', Me.path);
 }
 
 function getConnectedDevices() {
@@ -236,6 +236,7 @@ function enable() {
     if (firstEnable) {
         firstEnable = false;
     }
+    console.log('[ADB-battery-information] --- Enable ---');
 }
 
 function disable() {
@@ -245,6 +246,7 @@ function disable() {
         GLib.Source.remove(refreshInfoTask);
         refreshInfoTask = null;
     }
+    console.log('[ADB-battery-information] --- Disable ---');
 }
 
 function txtToMap(str) {
