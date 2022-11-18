@@ -175,6 +175,14 @@ function updateBattery() {
         _keys.forEach(key => devicesData.get(key).clean());
         // update devices data
         if (visible) {
+            if (devices.length == 1) {
+                let info = getChargeInfo(devices[0]);
+                panelBaloon.set_text(
+                    (info == '') ?  _("no info") : info,
+                );
+            } else {
+                panelBaloon.set_text(_('Android devices charge level'));
+            }
             panelButton.menu.removeAll();
         }
         devices.forEach(function(deviceId) {
@@ -203,7 +211,7 @@ function updateBattery() {
                 gicon: Gio.icon_new_for_string(_icon_str),
             }));
             _item.actor.add_child(new St.Label({
-                text: info == "" ? deviceId + _(": no info") : info,
+                text: info == "" ? deviceId + ": " + _("no info") : info,
                 x_align: Clutter.ActorAlign.START,
                 y_align: Clutter.ActorAlign.START,
             }));
