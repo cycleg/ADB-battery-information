@@ -129,7 +129,7 @@ function showInfo() {
         }));
         panelBaloon = new PanelMenuBaloon(
             menuLayout,
-            _('Android devices charge levels'),
+            _('Android devices charge level'),
             { style_class: 'adb-battery-info-label'}
         );
         panelButton.connect('enter-event', () => {
