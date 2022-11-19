@@ -178,7 +178,7 @@ function updateBattery() {
             if (devices.length == 1) {
                 let info = getChargeInfo(devices[0]);
                 panelBaloon.set_text(
-                    (info == '') ?  _("no info") : info,
+                    (info == '') ?  devices[0] + ": " + _("no info") : info,
                 );
             } else {
                 panelBaloon.set_text(_('Android devices charge level'));
