@@ -140,8 +140,7 @@ function showInfo() {
         });
         panelButton.add_actor(menuLayout);
         panelButton.setMenu(new PopupMenu.PopupMenu(panelButton, 0, St.Side.TOP));
-        Main.panel.addToStatusArea('ADB-battery-information', panelButton);
-        Main.panel._rightBox.insert_child_at_index(panelButton, 0);
+        Main.panel.addToStatusArea('ADB-battery-information', panelButton, 0, 'right');
         visible = true;
     }
 }
@@ -149,7 +148,6 @@ function showInfo() {
 function hideInfo() {
     if (visible) {
         visible = false;
-        Main.panel._rightBox.remove_child(panelButton);
         Main.panel.statusArea['ADB-battery-information'].destroy();
         panelBaloon.destroy();
         panelBaloon = null;
