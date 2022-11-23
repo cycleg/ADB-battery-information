@@ -51,6 +51,7 @@ var ReferenceStorage = class ReferenceStorage {
     _clear() {
         this._reference = {};
         this._hash = '';
+        this._timestamp = 0;
     }
 
     getDevDescription(model) {
@@ -96,6 +97,7 @@ var ReferenceStorage = class ReferenceStorage {
                 }
             });
             this._hash = devReference.hash;
+            this._timestamp = devReference.timestamp;
             console.log(
                 '[ADB-battery-information] Stored devices reference loaded from "%s".',
                 cache,
@@ -112,6 +114,7 @@ var ReferenceStorage = class ReferenceStorage {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
         try {
             this._hash = settings.get_string('hash');
+            this._timestamp = settings.get_uint64('timestamp');
             ReferenceStorage.FIELDS.forEach(attr => {
                 let ref = settings.get_value(attr).deep_unpack();
                 for (const [key, value] of Object.entries(ref)) {
@@ -130,6 +133,7 @@ var ReferenceStorage = class ReferenceStorage {
     saveGSettings() {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
         settings.set_string('hash', this._hash);
+        settings.set_uint64('timestamp', this._timestamp);
         ReferenceStorage.FIELDS.forEach(attr => {
             let value = settings.get_value(attr);
             let ref = {};
@@ -141,13 +145,14 @@ var ReferenceStorage = class ReferenceStorage {
         Gio.Settings.sync();
     }
 
-    _saveFile(hash, devices) {
+    _saveFile() {
         let content = {
-            hash: hash,
+            hash: this._hash,
+            timestamp: this._timestamp,
         };
         ReferenceStorage.FIELDS.forEach(attr => content[attr] = {});
         ReferenceStorage.FIELDS.forEach(attr => {
-            for (const [key, value] of Object.entries(devices)) {
+            for (const [key, value] of Object.entries(this._reference)) {
               content[attr][key] = value[attr];
             };
         });
@@ -166,7 +171,7 @@ var ReferenceStorage = class ReferenceStorage {
     saveFileIfNotExists() {
         if (!GLib.file_test(this._cacheFile, GLib.FileTest.EXISTS) &&
             (this._updateState == 'end')) {
-            if (!this._saveFile(this._hash, this._reference)) {
+            if (!this._saveFile()) {
                 console.error(
                     "[ADB-battery-information] Can't store devices reference to file \"%s\"",
                     this._cacheFile,
@@ -241,7 +246,8 @@ var ReferenceStorage = class ReferenceStorage {
         if (this._updateState == 'saveFile') {
             this._reference = devReference;
             this._hash = downloader.hash;
-            let ok = this._saveFile(this._hash, this._reference);
+            this._timestamp = Math.floor(Date.now() / 1000);
+            let ok = this._saveFile();
             if (ok) {
                 console.log(
                     '[ADB-battery-information] Devices reference stored.',

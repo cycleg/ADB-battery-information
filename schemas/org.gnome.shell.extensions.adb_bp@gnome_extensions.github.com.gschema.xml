@@ -7,7 +7,11 @@
   <schema id="org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference" path="/org/gnome/shell/extensions/adb_bp@gnome_extensions.github.com/device-reference/">
     <key name="hash" type="s">
       <default>''</default>
-      <summary>Device reference MD5 hashsum</summary>
+      <summary>MD5 hashsum</summary>
+    </key>
+    <key name="timestamp" type="t">
+      <default>0</default>
+      <summary>Last update timestamp</summary>
     </key>
     <key name="brand" type="a{ss}">
       <default>{}</default>
