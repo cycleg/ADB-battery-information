@@ -48,6 +48,10 @@ var ReferenceStorage = class ReferenceStorage {
         return this._hash == '';
     }
 
+    get updateDate() {
+        return new Date(this._timestamp * 1000)
+    }
+
     _clear() {
         this._reference = {};
         this._hash = '';
@@ -209,7 +213,8 @@ var ReferenceStorage = class ReferenceStorage {
         this._updateState = (downloader.hash == this._hash) ? 'end' : 'loadFile';
         if (this._updateState == 'end') {
             console.log(
-                '[ADB-battery-information] Remote resource not changed.',
+                '[ADB-battery-information] Remote resource not changed; last updated at %s.',
+                this.updateDate.toLocaleString(),
             );
             return new Promise((resolve, reject) => {
                 reject(downloader);
