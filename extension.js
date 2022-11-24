@@ -46,7 +46,7 @@ function init () {
         );
     } catch (err) {
        console.error('[ADB-battery-information] --- %s ---', err);
-       console.error('[ADB-battery-information] --- Initialization impossible ---');
+       console.error('[ADB-battery-information] --- Initialization failed ---');
     }
     if (ok) {
         GLib.spawn_close_pid(childPid);
