@@ -25,21 +25,47 @@ const _ = Gettext.gettext;
 let storage = null;
 let panelButton = null;
 let panelBaloon = null;
+let initComplete = false;
 let firstEnable = true;
-let refreshInfoTask = null;
 let visible = false;
+let refreshInfoTask = null;
 let devicesData = new Map();
 
 function init () {
+    let ok = false;
+    let childPid = null;
     storage = new ReferenceStorage();
     // start adb daemon
-    GLib.spawn_async(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null);
-    console.log('[ADB-battery-information] --- Init from "%s" ---', Me.path);
+    try {
+        [ok, childPid] = GLib.spawn_async(
+            null,
+            ["adb", "devices"],
+            null,
+            GLib.SpawnFlags.SEARCH_PATH,
+            null,
+        );
+    } catch (err) {
+       console.error('[ADB-battery-information] --- %s ---', err);
+       console.error('[ADB-battery-information] --- Initialization impossible ---');
+    }
+    if (ok) {
+        GLib.spawn_close_pid(childPid);
+        initComplete = true;
+    }
+    if (initComplete) {
+        console.log('[ADB-battery-information] --- Init from "%s" ---', Me.path);
+    }
 }
 
 function getConnectedDevices() {
     let devices = [];
-    let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", "adb devices"], null, GLib.SpawnFlags.SEARCH_PATH, null);
+    let [res, out, error, status] = GLib.spawn_sync(
+        null,
+        ["adb", "devices"],
+        null,
+        GLib.SpawnFlags.SEARCH_PATH,
+        null,
+    );
     if (status !== 0) {
         return devices;
     }
@@ -61,14 +87,24 @@ function getConnectedDevices() {
 }
 
 function getModel(deviceId) {
-    let cmd = 'adb -s ' + deviceId + ' shell getprop ro.product.model';
-    let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
+    let [res, out, error, status] = GLib.spawn_sync(
+        null,
+        ["adb", "-s", deviceId, 'shell', 'getprop', 'ro.product.model'],
+        null,
+        GLib.SpawnFlags.SEARCH_PATH,
+        null,
+    );
     return ByteArray.toString(out).replace("\n", "");
 }
 
 function getChargeInfo(deviceId) {
-    let cmd = 'adb -s ' + deviceId + ' shell dumpsys battery';
-    let [res, out, error, status] = GLib.spawn_sync(null, ["bash", "-c", cmd], null, GLib.SpawnFlags.SEARCH_PATH, null);
+    let [res, out, error, status] = GLib.spawn_sync(
+        null,
+        ["adb", "-s", deviceId, 'shell', 'dumpsys', 'battery'],
+        null,
+        GLib.SpawnFlags.SEARCH_PATH,
+        null,
+    );
     if (status !== 0) {
         return "";
     }
@@ -223,6 +259,9 @@ function updateBattery() {
 }
 
 function enable() {
+    if (!initComplete) {
+        return;
+    }
     if (storage.empty) {
         storage.loadGSettings();
     }
@@ -246,6 +285,9 @@ function enable() {
 }
 
 function disable() {
+    if (!initComplete) {
+        return;
+    }
     hideInfo();
     devicesData.forEach(e => e.clean());
     if (refreshInfoTask) {
