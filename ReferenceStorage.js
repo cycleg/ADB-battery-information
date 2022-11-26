@@ -136,16 +136,18 @@ var ReferenceStorage = class ReferenceStorage {
 
     saveGSettings() {
         let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
+        settings.delay();
         settings.set_string('hash', this._hash);
         settings.set_uint64('timestamp', this._timestamp);
         ReferenceStorage.FIELDS.forEach(attr => {
-            let value = settings.get_value(attr);
+            let valueType = settings.get_value(attr).get_type_string();
             let ref = {};
             for (const [key, content] of Object.entries(this._reference)) {
                 ref[key] = content[attr]
             }
-            settings.set_value(attr, GLib.Variant.new(value.get_type_string(), ref));
+            settings.set_value(attr, GLib.Variant.new(valueType, ref));
         });
+        settings.apply();
         Gio.Settings.sync();
     }
 
