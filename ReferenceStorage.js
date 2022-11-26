@@ -21,7 +21,7 @@ const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
 var ReferenceStorage = class ReferenceStorage {
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
-    static GSETTINGS_SCHEMA = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference';
+    static GSETTINGS_SCHEMA_ID_PREFIX = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.';
     static FIELDS = ['brand', 'name', 'device'];
     static FIELDS_TO_CSV = {
         'brand': '﻿Retail Branding',
@@ -56,6 +56,21 @@ var ReferenceStorage = class ReferenceStorage {
         this._reference = {};
         this._hash = '';
         this._timestamp = 0;
+    }
+
+    _loadSettingsSchema(schema) {
+        const GioSSS = Gio.SettingsSchemaSource;
+        let schemaSource = GioSSS.new_from_directory(
+            ExtensionUtils.getCurrentExtension().dir.get_child('schemas').get_path(),
+            GioSSS.get_default(),
+            false,
+        );
+        let schemaObj = schemaSource.lookup(ReferenceStorage.GSETTINGS_SCHEMA_ID_PREFIX + schema, true);
+        if (!schemaObj)
+            throw new Error(
+                `schema ${ReferenceStorage.GSETTINGS_SCHEMA_ID_PREFIX + schema} could not be found`,
+            );
+        return schemaObj;
     }
 
     getDevDescription(model) {
@@ -115,7 +130,8 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     loadGSettings() {
-        let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
+        let schemaObj = this._loadSettingsSchema('device-reference');
+        let settings = new Gio.Settings({ settings_schema: schemaObj });
         try {
             this._hash = settings.get_string('hash');
             this._timestamp = settings.get_uint64('timestamp');
@@ -135,7 +151,8 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     saveGSettings() {
-        let settings = ExtensionUtils.getSettings(ReferenceStorage.GSETTINGS_SCHEMA);
+        let schemaObj = this._loadSettingsSchema('device-reference');
+        let settings = new Gio.Settings({ settings_schema: schemaObj });
         settings.delay();
         settings.set_string('hash', this._hash);
         settings.set_uint64('timestamp', this._timestamp);
