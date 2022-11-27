@@ -29,4 +29,23 @@
       <description>Device by device model reference</description>
     </key>
   </schema>
+  <!-- for future use -->
+  <schema id="org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference.no-items" path="/org/gnome/shell/extensions/adb_bp@gnome_extensions.github.com/device-reference/items/">
+  </schema>
+  <schema id="org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.device-reference.item">
+    <key name="brand" type="s">
+      <default>''</default>
+      <summary>Device brand</summary>
+      <description>Device retail brand</description>
+    </key>
+    <key name="name" type="s">
+      <default>''</default>
+      <summary>Device name</summary>
+      <description>Device marketing name</description>
+    </key>
+    <key name="device" type="s">
+      <default>''</default>
+      <summary>Device</summary>
+    </key>
+  </schema>
 </schemalist>
