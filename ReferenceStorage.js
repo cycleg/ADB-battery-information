@@ -35,6 +35,16 @@ var ReferenceStorage = class ReferenceStorage {
         linefeedBeforeEOF: true,
     };
 
+    static _unicodeToGSettingPath = function(str) {
+        return str.replace(/./g, function(ch) {
+            return 'u' + ('000' + ch.charCodeAt().toString(16)).slice(-4);
+        });
+    };
+
+    static _gSettingPathTounicode = function(str) {
+        return JSON.parse('"' + str.replaceAll('u', '\\u') + '"');
+    };
+
     constructor() {
         this._updateState = 'end';
         this._clear();
@@ -106,15 +116,9 @@ var ReferenceStorage = class ReferenceStorage {
         }
         if (ok) {
             let devReference = JSON.parse(contents);
-            ReferenceStorage.FIELDS.forEach(attr => {
-                for (const [key, value] of Object.entries(devReference[attr])) {
-                    if (!(key in this._reference)) {
-                        this._reference[key] = {};
-                        ReferenceStorage.FIELDS.forEach(a => this._reference[key][a] = '');
-                    }
-                    this._reference[key][attr] = value;
-                }
-            });
+            for (const [key, value] of Object.entries(devReference.items)) {
+                this._reference[key] = value;
+            }
             this._hash = devReference.hash;
             this._timestamp = devReference.timestamp;
             console.log(
@@ -172,13 +176,11 @@ var ReferenceStorage = class ReferenceStorage {
         let content = {
             hash: this._hash,
             timestamp: this._timestamp,
+            items: {},
         };
-        ReferenceStorage.FIELDS.forEach(attr => content[attr] = {});
-        ReferenceStorage.FIELDS.forEach(attr => {
-            for (const [key, value] of Object.entries(this._reference)) {
-              content[attr][key] = value[attr];
-            };
-        });
+        for (const [key, value] of Object.entries(this._reference)) {
+          content.items[key] = value;
+        };
         let fout = Gio.File.new_for_path(this._cacheFile);
         let [ok, etag] = fout.replace_contents(
             JSON.stringify(content, null, 2),
