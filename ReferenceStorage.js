@@ -88,7 +88,8 @@ var ReferenceStorage = class ReferenceStorage {
         if (ret in this._reference) {
             let brand = this._reference[ret].brand;
             let name = this._reference[ret].name;
-            ret = brand + ((name !== "") ? " " + name : "");
+            let [gt, lt] = brand.length >= name ? [brand, name] : [name, brand];
+            ret = (gt.indexOf(lt) == -1 ? brand : "")  + ((name !== "") ? " " + name : "");
         }
         return (ret !== "") ? ret : model;
     }
