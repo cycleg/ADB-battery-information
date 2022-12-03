@@ -28,6 +28,7 @@ let panelBaloon = null;
 let initComplete = false;
 let firstEnable = true;
 let visible = false;
+let enabled = false;
 let refreshInfoTask = null;
 let devicesData = new Map();
 
@@ -146,6 +147,19 @@ function getChargeInfo(deviceId) {
     return storage.getDevDescription(devData.model) + ": " + message;
 }
 
+function runDataCollector() {
+    if (refreshInfoTask == null) {
+        refreshInfoTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
+    }
+}
+
+function stopDataCollector() {
+    if (refreshInfoTask != null) {
+        GLib.Source.remove(refreshInfoTask);
+        refreshInfoTask = null;
+    }
+}
+
 function showInfo() {
     if (!visible) {
         // Add the button to the panel
@@ -208,6 +222,9 @@ function updateBattery() {
         _keys = inCache.filter(e => !devices.includes(e));
         _keys.forEach(key => devicesData.get(key).clean());
         // update devices data
+        if (enabled) {
+            showInfo();
+        }
         if (visible) {
             if (devices.length == 1) {
                 let info = getChargeInfo(devices[0]);
@@ -220,8 +237,10 @@ function updateBattery() {
             panelButton.menu.removeAll();
         }
         devices.forEach(function(deviceId) {
-            showInfo();
             let info = getChargeInfo(deviceId);
+            if (!visible) {
+                return;
+            }
             let level = devicesData.get(deviceId).prevBatteryLevel;
             let _item = new PopupMenu.PopupBaseMenuItem();
             let _icon_str = '. GThemedIcon ';
@@ -259,7 +278,7 @@ function updateBattery() {
 }
 
 function enable() {
-    if (!initComplete) {
+    if (!initComplete || enabled) {
         return;
     }
     if (storage.empty) {
@@ -276,24 +295,25 @@ function enable() {
         });
     }
     storage.saveFileIfNotExists();
+    enabled = true;
+    showInfo();
     updateBattery();
-    refreshInfoTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
     if (firstEnable) {
+        runDataCollector();
         firstEnable = false;
     }
     console.log('[ADB-battery-information] --- Enable ---');
 }
 
 function disable() {
-    if (!initComplete) {
+    if (!initComplete || !enabled) {
         return;
     }
     hideInfo();
-    devicesData.forEach(e => e.clean());
-    if (refreshInfoTask) {
-        GLib.Source.remove(refreshInfoTask);
-        refreshInfoTask = null;
-    }
+    /*
+    stopDataCollector();
+    */
+    enabled = false;
     console.log('[ADB-battery-information] --- Disable ---');
 }
 
