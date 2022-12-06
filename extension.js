@@ -5,7 +5,6 @@ const EstimatePeriod = 60;
 // info refresh period
 const RefreshPeriod = 10;
 
-const ByteArray = imports.byteArray;
 const {Clutter, Gio, GLib, St} = imports.gi;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
@@ -17,12 +16,14 @@ const Me = ExtensionUtils.getCurrentExtension();
 const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
 const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
 const ReferenceStorage = Me.imports.ReferenceStorage.ReferenceStorage
+const AdbShell = Me.imports.AdbShell.AdbShell;
 
 const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
 const _ = Gettext.gettext;
 
 let storage = null;
+let adbShell = null;
 let panelButton = null;
 let panelBaloon = null;
 let initComplete = false;
@@ -36,15 +37,10 @@ function init () {
     let ok = false;
     let childPid = null;
     storage = new ReferenceStorage();
+    adbShell = new AdbShell();
     // start adb daemon
     try {
-        [ok, childPid] = GLib.spawn_async(
-            null,
-            ["adb", "devices"],
-            null,
-            GLib.SpawnFlags.SEARCH_PATH,
-            null,
-        );
+        [ok, childPid] = adbShell.init();
     } catch (err) {
        console.error('[ADB-battery-information] --- %s ---', err);
        console.error('[ADB-battery-information] --- Initialization failed ---');
@@ -58,63 +54,13 @@ function init () {
     }
 }
 
-function getConnectedDevices() {
-    let devices = [];
-    let [res, out, error, status] = GLib.spawn_sync(
-        null,
-        ["adb", "devices"],
-        null,
-        GLib.SpawnFlags.SEARCH_PATH,
-        null,
-    );
-    if (status !== 0) {
-        return devices;
-    }
-    let lines = ByteArray.toString(out).split("\n");
-    if (lines.length < 2) {
-        return devices;
-    }
-    for (let i = 1; i < lines.length; i++) {
-        let parts = lines[i].split("\t");
-        if (parts.length < 2) {
-            continue;
-        }
-        if (parts[1] !== "device") {
-            continue;
-        }
-        devices.push(parts[0]);
-    }
-    return devices;
-}
-
-function getModel(deviceId) {
-    let [res, out, error, status] = GLib.spawn_sync(
-        null,
-        ["adb", "-s", deviceId, 'shell', 'getprop', 'ro.product.model'],
-        null,
-        GLib.SpawnFlags.SEARCH_PATH,
-        null,
-    );
-    return ByteArray.toString(out).replace("\n", "");
-}
-
 function getChargeInfo(deviceId) {
-    let [res, out, error, status] = GLib.spawn_sync(
-        null,
-        ["adb", "-s", deviceId, 'shell', 'dumpsys', 'battery'],
-        null,
-        GLib.SpawnFlags.SEARCH_PATH,
-        null,
-    );
-    if (status !== 0) {
-        return "";
-    }
-    let result = txtToMap(ByteArray.toString(out));
+    let result = adbShell.getChargeInfo(deviceId);
     if (result.size == 0) {
-        return "";
+        return '';
     }
     let currTimestamp = Math.floor(Date.now() / 1000);
-    let currLevel = result.has("level") ? result.get("level") : -1;
+    let currLevel = result.has('level') ? result.get('level') : -1;
     let devData = devicesData.get(deviceId)
     if (devData.beginBatteryLevel == -1) {
         devData.beginBatteryLevel = currLevel;
@@ -126,25 +72,25 @@ function getChargeInfo(deviceId) {
     if ((currLevel > devData.prevBatteryLevel) || (currTimestamp - devData.refreshTimestamp > EstimatePeriod)) {
         let speed = (currLevel - devData.beginBatteryLevel) * 1.0 / (currTimestamp - devData.beginTimestamp);
         if (speed > 0) {
-            let leadingZeros = (n, len) => n.toString().padStart(len, "0");
+            let leadingZeros = (n, len) => n.toString().padStart(len, '0');
             let seconds = (100 - currLevel) * 1.0 / speed;
             let hours = Math.floor(seconds / 3600);
             let mins = Math.floor((seconds - hours * 3600) / 60);
             seconds = Math.round(seconds % 60);
-            devData.lastEstimation = ", " + hours + ":" + leadingZeros(mins, 2) + ":" + leadingZeros(seconds, 2);
+            devData.lastEstimation = ', ' + hours + ':' + leadingZeros(mins, 2) + ':' + leadingZeros(seconds, 2);
             devData.prevBatteryLevel = currLevel;
             devData.refreshTimestamp = currTimestamp;
         }
     }
-    let message = ((currLevel > -1) ? "" + currLevel + "%" : _("getting info error")) + devData.lastEstimation;
+    let message = ((currLevel > -1) ? '' + currLevel + '%' : _('getting info error')) + devData.lastEstimation;
     if (currLevel == 100) {
-        message = _("fully charged");
+        message = _('fully charged');
     }
-    if (devData.model == "") {
-        devData.model = getModel(deviceId);
+    if (devData.model == '') {
+        devData.model = adbShell.getModel(deviceId);
     }
     devicesData.set(deviceId, devData);
-    return storage.getDevDescription(devData.model) + ": " + message;
+    return storage.getDevDescription(devData.model) + ': ' + message;
 }
 
 function runDataCollector() {
@@ -207,7 +153,7 @@ function hideInfo() {
 }
 
 function updateBattery() {
-    let devices = getConnectedDevices();
+    let devices = adbShell.getConnectedDevices();
     if (devices.length > 0) {
         let inCache = Array.from(devicesData.keys());
         // add new
@@ -229,7 +175,7 @@ function updateBattery() {
             if (devices.length == 1) {
                 let info = getChargeInfo(devices[0]);
                 panelBaloon.set_text(
-                    (info == '') ?  devices[0] + ": " + _("no info") : info,
+                    (info == '') ?  devices[0] + ': ' + _('no info') : info,
                 );
             } else {
                 panelBaloon.set_text(_('Android devices charge level'));
@@ -264,7 +210,7 @@ function updateBattery() {
                 gicon: Gio.icon_new_for_string(_icon_str),
             }));
             _item.actor.add_child(new St.Label({
-                text: info == "" ? deviceId + ": " + _("no info") : info,
+                text: info == '' ? deviceId + ': ' + _('no info') : info,
                 x_align: Clutter.ActorAlign.START,
                 y_align: Clutter.ActorAlign.START,
             }));
@@ -310,19 +256,9 @@ function disable() {
         return;
     }
     hideInfo();
-    /*
+/*
     stopDataCollector();
-    */
+*/
     enabled = false;
     console.log('[ADB-battery-information] --- Disable ---');
-}
-
-function txtToMap(str) {
-    let params = str.split("\n");
-    let dict = new Map();
-    for (let i = 0; i < params.length; i++) {
-        let parts = params[i].split(":");
-        dict.set(parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
-    }
-    return dict
 }

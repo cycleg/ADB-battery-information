@@ -55,6 +55,7 @@ doownloadComplete.then(
             });
             let content = {
               hash: downloader.hash,
+              timestamp: Math.floor(Date.now() / 1000),
               brand: {},
               name: {},
               device: {},

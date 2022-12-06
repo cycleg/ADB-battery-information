@@ -41,7 +41,7 @@ var ReferenceStorage = class ReferenceStorage {
         });
     };
 
-    static _gSettingPathTounicode = function(str) {
+    static _gSettingPathToUnicode = function(str) {
         return JSON.parse('"' + str.replaceAll('u', '\\u') + '"');
     };
 
