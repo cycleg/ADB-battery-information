@@ -30,7 +30,7 @@ let initComplete = false;
 let firstEnable = true;
 let visible = false;
 let enabled = false;
-let refreshInfoTask = null;
+let dataCollectorTask = null;
 let devicesData = new Map();
 
 function init () {
@@ -93,19 +93,6 @@ function getChargeInfo(deviceId) {
     return storage.getDevDescription(devData.model) + ': ' + message;
 }
 
-function runDataCollector() {
-    if (refreshInfoTask == null) {
-        refreshInfoTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, updateBattery);
-    }
-}
-
-function stopDataCollector() {
-    if (refreshInfoTask != null) {
-        GLib.Source.remove(refreshInfoTask);
-        refreshInfoTask = null;
-    }
-}
-
 function showInfo() {
     if (!visible) {
         // Add the button to the panel
@@ -152,7 +139,7 @@ function hideInfo() {
     }
 }
 
-function updateBattery() {
+function dataCollectorStep() {
     let devices = adbShell.getConnectedDevices();
     if (devices.length > 0) {
         let inCache = Array.from(devicesData.keys());
@@ -223,6 +210,19 @@ function updateBattery() {
     return GLib.SOURCE_CONTINUE;
 }
 
+function runDataCollector() {
+    if (dataCollectorTask == null) {
+        dataCollectorTask = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, RefreshPeriod, dataCollectorStep);
+    }
+}
+
+function stopDataCollector() {
+    if (dataCollectorTask != null) {
+        GLib.Source.remove(dataCollectorTask);
+        dataCollectorTask = null;
+    }
+}
+
 function enable() {
     if (!initComplete || enabled) {
         return;
@@ -243,7 +243,7 @@ function enable() {
     storage.saveFileIfNotExists();
     enabled = true;
     showInfo();
-    updateBattery();
+    dataCollectorStep();
     if (firstEnable) {
         runDataCollector();
         firstEnable = false;
