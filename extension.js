@@ -77,9 +77,12 @@ function getChargeInfo(deviceId) {
             let hours = Math.floor(seconds / 3600);
             let mins = Math.floor((seconds - hours * 3600) / 60);
             seconds = Math.round(seconds % 60);
-            devData.lastEstimation = ', ' + hours + ':' + leadingZeros(mins, 2) + ':' + leadingZeros(seconds, 2);
+            devData.lastEstimation = _(', left to completion ') + hours + ':' + leadingZeros(mins, 2) + ':' + leadingZeros(seconds, 2);
             devData.prevBatteryLevel = currLevel;
             devData.refreshTimestamp = currTimestamp;
+        }
+        if (devData.lastEstimation == '') {
+            devData.lastEstimation = _(', counting the remaining time to completion...')
         }
     }
     let message = ((currLevel > -1) ? '' + currLevel + '%' : _('getting info error')) + devData.lastEstimation;
