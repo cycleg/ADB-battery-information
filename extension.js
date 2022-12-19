@@ -58,7 +58,7 @@ function estimationTime(hours, _mins, _secs) {
     const leadingZeros = (n, len) => n.toString().padStart(len, '0');
     const mins = leadingZeros(_mins, 2);
     const secs = leadingZeros(_secs, 2);
-    return _(`, ${hours}:${mins}:${secs} to completion`);
+    return `, ${hours}:${mins}:${secs} ` + _('to completion');
 }
 
 function getChargeInfo(deviceId) {
