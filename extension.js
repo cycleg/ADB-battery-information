@@ -18,7 +18,7 @@ const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
 const ReferenceStorage = Me.imports.ReferenceStorage.ReferenceStorage
 const AdbShell = Me.imports.AdbShell.AdbShell;
 
-const GETTEXT_DOMAIN = 'ADB-battery-information@golovin.alexei_gmail.com';
+const GETTEXT_DOMAIN = 'adb_bp@gnome_extensions.github.com';
 const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
 const _ = Gettext.gettext;
 
@@ -54,6 +54,13 @@ function init () {
     }
 }
 
+function estimationTime(hours, _mins, _secs) {
+    const leadingZeros = (n, len) => n.toString().padStart(len, '0');
+    const mins = leadingZeros(_mins, 2);
+    const secs = leadingZeros(_secs, 2);
+    return _(`, ${hours}:${mins}:${secs} to completion`);
+}
+
 function getChargeInfo(deviceId) {
     let result = adbShell.getChargeInfo(deviceId);
     if (result.size == 0) {
@@ -72,18 +79,19 @@ function getChargeInfo(deviceId) {
     if ((currLevel > devData.prevBatteryLevel) || (currTimestamp - devData.refreshTimestamp > EstimatePeriod)) {
         let speed = (currLevel - devData.beginBatteryLevel) * 1.0 / (currTimestamp - devData.beginTimestamp);
         if (speed > 0) {
-            let leadingZeros = (n, len) => n.toString().padStart(len, '0');
-            let seconds = (100 - currLevel) * 1.0 / speed;
-            let hours = Math.floor(seconds / 3600);
-            let mins = Math.floor((seconds - hours * 3600) / 60);
-            seconds = Math.round(seconds % 60);
-            devData.lastEstimation = _(', left to completion ') + hours + ':' + leadingZeros(mins, 2) + ':' + leadingZeros(seconds, 2);
+            const seconds = (100 - currLevel) * 1.0 / speed;
+            const hours = Math.floor(seconds / 3600);
+            devData.lastEstimation = estimationTime(
+                hours,
+                Math.floor((seconds - hours * 3600) / 60),
+                Math.round(seconds % 60),
+            );
             devData.prevBatteryLevel = currLevel;
             devData.refreshTimestamp = currTimestamp;
         }
-        if (devData.lastEstimation == '') {
-            devData.lastEstimation = _(', counting the remaining time to completion...')
-        }
+    }
+    if (devData.lastEstimation == '') {
+        devData.lastEstimation = _(', counting time to completion...')
     }
     let message = ((currLevel > -1) ? '' + currLevel + '%' : _('getting info error')) + devData.lastEstimation;
     if (currLevel == 100) {
