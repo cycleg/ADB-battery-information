@@ -19,6 +19,7 @@ const CSV = Me.imports.CSV;
 const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
 
 var ReferenceStorage = class ReferenceStorage {
+    // Google Play supported devices, https://support.google.com/googleplay/answer/1727131
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
     static GSETTINGS_SCHEMA_ID_PREFIX = 'org.gnome.shell.extensions.adb_bp@gnome_extensions.github.com.';
