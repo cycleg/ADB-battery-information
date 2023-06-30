@@ -40,7 +40,7 @@ class PanelMenuBaloon extends St.Label {
         let parentHeight = this._parent.allocation.y2 - this._parent.allocation.y1;
 
         let textDirectionLeft = Clutter.get_default_text_direction() == Clutter.TextDirection.LTR;
-        let y = stageY == 0 ? stageY + parentHeight + yOffset : stageY - parentHeight - yOffset;
+        let y = stageY + (parentHeight + yOffset) * (stageY + parentHeight == screenHeight ?  -1 : 1);
         let x = stageX + parentWidth < screenWidth / 2 ?
                 textDirectionLeft ? stageX + xOffset : stageX + parentWidth - xOffset :
                 stageX + parentWidth - labelWidth - xOffset;
