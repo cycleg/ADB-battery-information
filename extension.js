@@ -26,10 +26,10 @@ let storage = null;
 let adbShell = null;
 let panelButton = null;
 let panelBaloon = null;
-let initComplete = false;
-let firstEnable = true;
-let visible = false;
-let enabled = false;
+let extensionInitComplete = false;
+let extensionFirstEnable = true;
+let isVisible = false;
+let extensionEnabled = false;
 let dataCollectorTask = null;
 let devicesData = new Map();
 
@@ -47,9 +47,9 @@ function init () {
     }
     if (ok) {
         GLib.spawn_close_pid(childPid);
-        initComplete = true;
+        extensionInitComplete = true;
     }
-    if (initComplete) {
+    if (extensionInitComplete) {
         console.log('[ADB-battery-information] --- Init from "%s" ---', Me.path);
     }
 }
@@ -105,7 +105,7 @@ function getChargeInfo(deviceId) {
 }
 
 function showInfo() {
-    if (!visible) {
+    if (!isVisible) {
         // Add the button to the panel
         panelButton = new PanelMenu.Button()
         let menuLayout = new St.BoxLayout();
@@ -135,13 +135,13 @@ function showInfo() {
         panelButton.add_actor(menuLayout);
         panelButton.setMenu(new PopupMenu.PopupMenu(panelButton, 0, St.Side.TOP));
         Main.panel.addToStatusArea('ADB-battery-information', panelButton, 0, 'right');
-        visible = true;
+        isVisible = true;
     }
 }
 
 function hideInfo() {
-    if (visible) {
-        visible = false;
+    if (isVisible) {
+        isVisible = false;
         Main.panel.statusArea['ADB-battery-information'].destroy();
         panelBaloon.destroy();
         panelBaloon = null;
@@ -166,14 +166,14 @@ function dataCollectorStep() {
         _keys = inCache.filter(e => !devices.includes(e));
         _keys.forEach(key => devicesData.get(key).clean());
         // update devices data
-        if (enabled) {
+        if (extensionEnabled) {
             showInfo();
         }
-        if (visible) {
+        if (isVisible) {
             if (devices.length == 1) {
                 let info = getChargeInfo(devices[0]);
                 panelBaloon.set_text(
-                    (info == '') ?  devices[0] + ': ' + _('no info') : info,
+                    (info == '') ? devices[0] + ': ' + _('no info') : info,
                 );
             } else {
                 panelBaloon.set_text(_('Android devices charge level'));
@@ -182,7 +182,7 @@ function dataCollectorStep() {
         }
         devices.forEach(function(deviceId) {
             let info = getChargeInfo(deviceId);
-            if (!visible) {
+            if (!isVisible) {
                 return;
             }
             let level = devicesData.get(deviceId).prevBatteryLevel;
@@ -235,7 +235,7 @@ function stopDataCollector() {
 }
 
 function enable() {
-    if (!initComplete || enabled) {
+    if (!extensionInitComplete || extensionEnabled) {
         return;
     }
     if (storage.empty) {
@@ -245,31 +245,31 @@ function enable() {
         storage.loadFromFile();
         storage.saveGSettings();
     }
-    if (storage.empty || firstEnable) {
+    if (storage.empty || extensionFirstEnable) {
         GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             storage.loadRemote();
             return GLib.SOURCE_REMOVE;
         });
     }
     storage.saveFileIfNotExists();
-    enabled = true;
+    extensionEnabled = true;
     showInfo();
     dataCollectorStep();
-    if (firstEnable) {
+    if (extensionFirstEnable) {
         runDataCollector();
-        firstEnable = false;
+        extensionFirstEnable = false;
     }
     console.log('[ADB-battery-information] --- Enable ---');
 }
 
 function disable() {
-    if (!initComplete || !enabled) {
+    if (!extensionInitComplete || !extensionEnabled) {
         return;
     }
     hideInfo();
 /*
     stopDataCollector();
 */
-    enabled = false;
+    extensionEnabled = false;
     console.log('[ADB-battery-information] --- Disable ---');
 }
