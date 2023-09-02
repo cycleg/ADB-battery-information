@@ -27,7 +27,9 @@ class PanelMenuBaloon extends St.Label {
         this.opacity = 0;
         this.show();
 
-        let [screenWidth, screenHeight] = Meta.get_backend().get_stage().get_size();
+        let [screenWidth, screenHeight] = ('get_backend' in Meta) ?
+            Meta.get_backend().get_stage().get_size() :
+            global.backend.get_stage().get_size();
         let [stageX, stageY] = this._parent.actor.get_transformed_position();
 
         let labelWidth = this.get_width();
