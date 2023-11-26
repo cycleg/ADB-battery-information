@@ -145,8 +145,6 @@ function hideInfo() {
         Main.panel.statusArea['ADB-battery-information'].destroy();
         panelBaloon.destroy();
         panelBaloon = null;
-        panelButton.destroy();
-        panelButton = null;
     }
 }
 
