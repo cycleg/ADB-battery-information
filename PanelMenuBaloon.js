@@ -12,11 +12,11 @@ class PanelMenuBaloon extends St.Label {
         this.set_text(text);
         Main.layoutManager.addChrome(this);
         this.hide();
-        this._parent.actor.connect(
+        this._parent.connect(
             'notify::hover',
             this._onHoverChanged.bind(this)
         );
-        this._parent.actor.opacity = 207;
+        this._parent.opacity = 207;
     }
 
     _onHoverChanged(actor) {
@@ -30,7 +30,7 @@ class PanelMenuBaloon extends St.Label {
         let [screenWidth, screenHeight] = ('get_backend' in Meta) ?
             Meta.get_backend().get_stage().get_size() :
             global.backend.get_stage().get_size();
-        let [stageX, stageY] = this._parent.actor.get_transformed_position();
+        let [stageX, stageY] = this._parent.get_transformed_position();
 
         let labelWidth = this.get_width();
 

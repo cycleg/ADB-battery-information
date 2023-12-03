@@ -201,11 +201,11 @@ function dataCollectorStep() {
             } else { // -1
                 _icon_str = _icon_str + 'battery-missing-symbolic';
             }
-            _item.actor.add_child(new St.Icon({
+            _item.add_child(new St.Icon({
                 style_class: 'popup-menu-icon',
                 gicon: Gio.icon_new_for_string(_icon_str),
             }));
-            _item.actor.add_child(new St.Label({
+            _item.add_child(new St.Label({
                 text: info == '' ? deviceId + ': ' + _('no info') : info,
                 x_align: Clutter.ActorAlign.START,
                 y_align: Clutter.ActorAlign.START,
