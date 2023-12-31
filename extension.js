@@ -158,11 +158,18 @@ function dataCollectorStep() {
             let info = new DeviceInfo();
             info.beginTimestamp = Math.floor(Date.now() / 1000);
             info.refreshTimestamp = info.beginTimestamp;
-            devicesData.set(key, info)
+            devicesData.set(key, info);
+            console.log('[ADB-battery-information] Device connected: ' + storage.getDevDescription(adbShell.getModel(key)));
         });
         // clean disconnected
         _keys = inCache.filter(e => !devices.includes(e));
-        _keys.forEach(key => devicesData.get(key).clean());
+        _keys.forEach(function(key) {
+            let devData = devicesData.get(key);
+            if (!devData.cleaned) {
+                console.log('[ADB-battery-information] Device disconnected: ' + storage.getDevDescription(devData.model));
+                devData.clean();
+            }
+        });
         // update devices data
         if (extensionEnabled) {
             showInfo();
@@ -214,7 +221,12 @@ function dataCollectorStep() {
         });
     } else {
         hideInfo();
-        devicesData.forEach(e => e.clean());
+        devicesData.forEach(function(devData) {
+            if (!devData.cleaned) {
+                console.log('[ADB-battery-information] Device disconnected: ' + storage.getDevDescription(devData.model));
+                devData.clean();
+            }
+        });
     }
     return GLib.SOURCE_CONTINUE;
 }

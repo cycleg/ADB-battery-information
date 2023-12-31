@@ -12,7 +12,6 @@ var DeviceInfo = class DeviceInfo {
         this._beginBatteryLevel = -1;
         this._prevBatteryLevel = -1;
         this._lastEstimation = "";
-        this._cleaned = true;
     }
 
     get beginBatteryLevel() {
@@ -20,7 +19,6 @@ var DeviceInfo = class DeviceInfo {
     }
 
     set beginBatteryLevel(level) {
-        this._cleaned = this._cleaned || (level !== -1);
         this._beginBatteryLevel = level;
     }
 
@@ -29,12 +27,15 @@ var DeviceInfo = class DeviceInfo {
     }
 
     set beginTimestamp(timestamp) {
-        this._cleaned = this._cleaned || (timestamp !== 0);
         this._beginTimestamp = timestamp;
     }
 
     get cleaned() {
-        return this._cleaned;
+        return (
+            (this._beginTimestamp == -1) && (this._refreshTimestamp == 0) &&
+            (this._beginBatteryLevel == -1) && (this._prevBatteryLevel == -1) &&
+            (this._lastEstimation == '') && (this._model == '')
+        )
     }
 
     get lastEstimation() {
@@ -42,7 +43,6 @@ var DeviceInfo = class DeviceInfo {
     }
 
     set lastEstimation(estimation) {
-        this._cleaned = this._cleaned || (estimation !== "");
         this._lastEstimation = estimation;
     }
 
@@ -59,7 +59,6 @@ var DeviceInfo = class DeviceInfo {
     }
 
     set prevBatteryLevel(level) {
-        this._cleaned = this._cleaned || (level !== -1);
         this._prevBatteryLevel = level;
     }
 
@@ -68,7 +67,6 @@ var DeviceInfo = class DeviceInfo {
     }
 
     set refreshTimestamp(timestamp) {
-        this._cleaned = this._cleaned || (timestamp !== 0);
         this._refreshTimestamp = timestamp;
     }
 };
