@@ -32,9 +32,9 @@ var DeviceInfo = class DeviceInfo {
 
     get cleaned() {
         return (
-            (this._beginTimestamp == -1) && (this._refreshTimestamp == 0) &&
+            (this._beginTimestamp == 0) && (this._refreshTimestamp == 0) &&
             (this._beginBatteryLevel == -1) && (this._prevBatteryLevel == -1) &&
-            (this._lastEstimation == '') && (this._model == '')
+            (this._lastEstimation == '')
         )
     }
 
