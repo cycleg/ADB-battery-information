@@ -314,7 +314,7 @@ getLength = ({length}) => length,
   }
 };
 
-function parse(csv, {quote = "\"", separators = [","], forceLineFeedAfterCarriageReturn = true, linefeedBeforeEOF = false, ignoreSpacesAfterQuotedString = true, taintQuoteSeparatorLines = false} = {}){
+export function parse(csv, {quote = "\"", separators = [","], forceLineFeedAfterCarriageReturn = true, linefeedBeforeEOF = false, ignoreSpacesAfterQuotedString = true, taintQuoteSeparatorLines = false} = {}){
   csv = csv.replace((forceLineFeedAfterCarriageReturn
     ? strictLinebreakGroups
     : looseLinebreakGroups), "\n");
@@ -354,7 +354,7 @@ function parse(csv, {quote = "\"", separators = [","], forceLineFeedAfterCarriag
   };
 };
 
-function stringify(object, {quote = "\"", separator = ",", lineEnd = "\n", trimEmpty = true, lineEndBeforeEOF = false} = {}){
+export function stringify(object, {quote = "\"", separator = ",", lineEnd = "\n", trimEmpty = true, lineEndBeforeEOF = false} = {}){
   let header = [],
     rows = [],
     mappedRows = [];

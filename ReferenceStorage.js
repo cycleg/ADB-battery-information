@@ -8,17 +8,16 @@ const W_OK = 2;   /* Test for write permission.  */
 const X_OK = 1;   /* Test for execute permission.  */
 const F_OK = 0;   /* Test for existence.  */
 
-const {Gio, GLib} = imports.gi;
-imports.gi.versions.Soup = "3.0"; // select version to import
-const Soup = imports.gi.Soup;
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const CSV = Me.imports.CSV;
-const HttpDownloader = Me.imports.HttpDownloader.HttpDownloader;
+import {HttpDownloader} from './HttpDownloader.js';
+import * as CSV from './CSV.js';
 
-var ReferenceStorage = class ReferenceStorage {
+export class ReferenceStorage {
     // Google Play supported devices, https://support.google.com/googleplay/answer/1727131
     static DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
     static DEVICES_DB_FILE = 'devices.json';
@@ -52,7 +51,8 @@ var ReferenceStorage = class ReferenceStorage {
     }
 
     get _cacheFile() {
-        return Me.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
+        let extensionObject = Extension.lookupByUUID('adb_bp@gnome_extensions.github.com');
+        return extensionObject.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
     }
 
     get empty() {
@@ -71,8 +71,9 @@ var ReferenceStorage = class ReferenceStorage {
 
     _loadSettingsSchema(schema) {
         const GioSSS = Gio.SettingsSchemaSource;
+        let extensionObject = Extension.lookupByUUID('adb_bp@gnome_extensions.github.com');
         let schemaSource = GioSSS.new_from_directory(
-            ExtensionUtils.getCurrentExtension().dir.get_child('schemas').get_path(),
+            extensionObject.dir.get_child('schemas').get_path(),
             GioSSS.get_default(),
             false,
         );

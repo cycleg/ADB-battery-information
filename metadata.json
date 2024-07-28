@@ -2,13 +2,10 @@
   "description": "Shows battery percentage of connected via ADB device",
   "name": "ADB battery information",
   "shell-version": [
-    "3.36",
-    "40",
-    "41",
-    "42",
-    "43",
-    "44"
+    "45",
+    "46"
   ],
+  "gettext-domain": "adb_bp@gnome_extensions.github.com",
   "url": "https://github.com/ilihydrogen/ADB-battery-information",
   "uuid": "adb_bp@gnome_extensions.github.com",
   "version": 1

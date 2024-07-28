@@ -3,19 +3,12 @@
 const DEVICES_DB_URL = 'https://storage.googleapis.com/play_public/supported_devices.csv';
 const DEVICES_DB_FILE = 'devices.json';
 
-const {Gio, GLib} = imports.gi;
-imports.gi.versions.Soup = "3.0"; // select version to import
-const Soup = imports.gi.Soup;
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0'; // select version to import
 
-/*
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
-
-const CSV = Me.imports.CSV;
-*/
-imports.searchPath.push('./');
-const HttpDownloader = imports.HttpDownloader.HttpDownloader
-const CSV = imports.CSV
+import HttpDownloader from './HttpDownloader.js';
+import * as CSV from './CSV.js';
 
 let loop = GLib.MainLoop.new(null, false);
 let downloader = new HttpDownloader();

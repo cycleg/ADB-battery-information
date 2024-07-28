@@ -1,9 +1,10 @@
 'use strict';
 
+// FIXME
 const ByteArray = imports.byteArray;
-const {GLib} = imports.gi;
+import GLib from 'gi://GLib';
 
-var AdbShell = class AdbShell {
+export class AdbShell {
     _txtToMap(str) {
         let params = str.split("\n");
         let dict = new Map();

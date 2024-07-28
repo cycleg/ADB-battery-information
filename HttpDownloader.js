@@ -1,10 +1,10 @@
 'use strict';
 
-const {Gio, GLib} = imports.gi;
-imports.gi.versions.Soup = "3.0"; // select version to import
-const Soup = imports.gi.Soup;
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Soup from 'gi://Soup?version=3.0';
 
-var HttpDownloader = class HttpDownloader {
+export class HttpDownloader {
     constructor() {
         this._httpSession = new Soup.Session();
         this.reset();

@@ -1,6 +1,6 @@
 'use strict';
 
-var DeviceInfo = class DeviceInfo {
+export class DeviceInfo {
     constructor() {
         this._model = "";
         this.clean()

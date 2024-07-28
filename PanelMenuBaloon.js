@@ -1,10 +1,17 @@
-const { Clutter, Gio, GLib, GObject, Meta, Shell, St } = imports.gi;
-const Main = imports.ui.main;
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Meta from 'gi://Meta';
+import Shell from 'gi://Shell';
+import St from 'gi://St';
+
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const PANEL_MENU_BALOON_SHOW_TIME = 0.15;
 const PANEL_MENU_BALOON_HIDE_TIME = 0.1;
 
-var PanelMenuBaloon = GObject.registerClass(
+const PanelMenuBaloon = GObject.registerClass(
 class PanelMenuBaloon extends St.Label {
     _init(parent, text, params) {
         super._init(params);
@@ -75,3 +82,4 @@ class PanelMenuBaloon extends St.Label {
         });
     }
 });
+export {PanelMenuBaloon}

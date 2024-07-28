@@ -5,54 +5,32 @@ const EstimatePeriod = 60;
 // info refresh period
 const RefreshPeriod = 10;
 
-const {Clutter, Gio, GLib, St} = imports.gi;
-const PanelMenu = imports.ui.panelMenu;
-const PopupMenu = imports.ui.popupMenu;
-const Main = imports.ui.main;
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import St from 'gi://St';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import {DeviceInfo} from './DeviceInfo.js';
+import {PanelMenuBaloon} from './PanelMenuBaloon.js';
+import {ReferenceStorage} from './ReferenceStorage.js';
+import {AdbShell} from './AdbShell.js';
 
-const DeviceInfo = Me.imports.DeviceInfo.DeviceInfo;
-const PanelMenuBaloon = Me.imports.PanelMenuBaloon.PanelMenuBaloon;
-const ReferenceStorage = Me.imports.ReferenceStorage.ReferenceStorage
-const AdbShell = Me.imports.AdbShell.AdbShell;
+import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const GETTEXT_DOMAIN = 'adb_bp@gnome_extensions.github.com';
-const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
-const _ = Gettext.gettext;
-
-let storage = null;
 let adbShell = null;
-let panelButton = null;
-let panelBaloon = null;
-let extensionInitComplete = false;
-let extensionFirstEnable = true;
-let isVisible = false;
-let extensionEnabled = false;
 let dataCollectorTask = null;
 let devicesData = new Map();
-
-function init () {
-    let ok = false;
-    let childPid = null;
-    storage = new ReferenceStorage();
-    adbShell = new AdbShell();
-    // start adb daemon
-    try {
-        [ok, childPid] = adbShell.init();
-    } catch (err) {
-       console.error('[ADB-battery-information] --- %s ---', err);
-       console.error('[ADB-battery-information] --- Initialization failed ---');
-    }
-    if (ok) {
-        GLib.spawn_close_pid(childPid);
-        extensionInitComplete = true;
-    }
-    if (extensionInitComplete) {
-        console.log('[ADB-battery-information] --- Init from "%s" ---', Me.path);
-    }
-}
+let extensionEnabled = false;
+let extensionFirstEnable = true;
+let extensionInitComplete = false;
+let extensionPath = null;
+let isVisible = false;
+let panelButton = null;
+let panelBaloon = null;
+let storage = null;
 
 function estimationTime(hours, _mins, _secs) {
     const leadingZeros = (n, len) => n.toString().padStart(len, '0');
@@ -109,13 +87,13 @@ function showInfo() {
         // Add the button to the panel
         panelButton = new PanelMenu.Button()
         let menuLayout = new St.BoxLayout();
-        menuLayout.add(new St.Icon({
+        menuLayout.add_child(new St.Icon({
             style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-white.svg'),
+            gicon: Gio.icon_new_for_string(extensionPath + '/icons/android-white.svg'),
         }));
-        menuLayout.add(new St.Icon({
+        menuLayout.add_child(new St.Icon({
             style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
@@ -132,7 +110,7 @@ function showInfo() {
         panelButton.connect('leave-event', () => {
             panelBaloon.hideLabel();
         });
-        panelButton.add_actor(menuLayout);
+        panelButton.add_child(menuLayout);
         panelButton.setMenu(new PopupMenu.PopupMenu(panelButton, 0, St.Side.TOP));
         Main.panel.addToStatusArea('ADB-battery-information', panelButton, 0, 'right');
         isVisible = true;
@@ -244,42 +222,67 @@ function stopDataCollector() {
     }
 }
 
-function enable() {
-    if (!extensionInitComplete || extensionEnabled) {
-        return;
+export default class AdbBatteryInfoExtension extends Extension {
+    constructor(metadata) {
+        let ok = false;
+        let childPid = null;
+        super(metadata);
+        adbShell = new AdbShell();
+        extensionPath = this.path
+        storage = new ReferenceStorage();
+        // start adb daemon
+        try {
+            [ok, childPid] = adbShell.init();
+        } catch (err) {
+           console.error('[ADB-battery-information] --- %s ---', err);
+           console.error('[ADB-battery-information] --- Initialization failed ---');
+        }
+        if (ok) {
+            GLib.spawn_close_pid(childPid);
+            extensionInitComplete = true;
+        }
+        if (extensionInitComplete) {
+            console.log('[ADB-battery-information] --- Init from "%s" ---', extensionPath);
+        }
     }
-    if (storage.empty) {
-        storage.loadGSettings();
-    }
-    if (storage.empty) {
-        storage.loadFromFile();
-        storage.saveGSettings();
-    }
-    if (storage.empty || extensionFirstEnable) {
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            storage.loadRemote();
-            return GLib.SOURCE_REMOVE;
-        });
-    }
-    storage.saveFileIfNotExists();
-    extensionEnabled = true;
-    showInfo();
-    dataCollectorStep();
-    if (extensionFirstEnable) {
-        runDataCollector();
-        extensionFirstEnable = false;
-    }
-    console.log('[ADB-battery-information] --- Enable ---');
-}
 
-function disable() {
-    if (!extensionInitComplete || !extensionEnabled) {
-        return;
+    enable() {
+        if (!extensionInitComplete || extensionEnabled) {
+            return;
+        }
+        if (storage.empty) {
+            storage.loadGSettings();
+        }
+        if (storage.empty) {
+            storage.loadFromFile();
+            storage.saveGSettings();
+        }
+        if (storage.empty || extensionFirstEnable) {
+            GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                storage.loadRemote();
+                return GLib.SOURCE_REMOVE;
+            });
+        }
+        storage.saveFileIfNotExists();
+        extensionEnabled = true;
+        showInfo();
+        dataCollectorStep();
+        if (extensionFirstEnable) {
+            runDataCollector();
+            extensionFirstEnable = false;
+        }
+        console.log('[ADB-battery-information] --- Enable ---');
     }
-    hideInfo();
-/*
-    stopDataCollector();
-*/
-    extensionEnabled = false;
-    console.log('[ADB-battery-information] --- Disable ---');
+
+    disable() {
+        if (!extensionInitComplete || !extensionEnabled) {
+            return;
+        }
+        hideInfo();
+    /*
+        stopDataCollector();
+    */
+        extensionEnabled = false;
+        console.log('[ADB-battery-information] --- Disable ---');
+    }
 }
