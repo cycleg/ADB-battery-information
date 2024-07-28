@@ -45,14 +45,14 @@ export class ReferenceStorage {
         return JSON.parse('"' + str.replaceAll('u', '\\u') + '"');
     };
 
-    constructor() {
+    constructor(extensionObject) {
         this._updateState = 'end';
+        this._extensionObject = extensionObject
         this._clear();
     }
 
     get _cacheFile() {
-        let extensionObject = Extension.lookupByUUID('adb_bp@gnome_extensions.github.com');
-        return extensionObject.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
+        return this._extensionObject.path + GLib.DIR_SEPARATOR_S + ReferenceStorage.DEVICES_DB_FILE;
     }
 
     get empty() {
@@ -71,9 +71,8 @@ export class ReferenceStorage {
 
     _loadSettingsSchema(schema) {
         const GioSSS = Gio.SettingsSchemaSource;
-        let extensionObject = Extension.lookupByUUID('adb_bp@gnome_extensions.github.com');
         let schemaSource = GioSSS.new_from_directory(
-            extensionObject.dir.get_child('schemas').get_path(),
+            this._extensionObject.dir.get_child('schemas').get_path(),
             GioSSS.get_default(),
             false,
         );

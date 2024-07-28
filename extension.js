@@ -26,8 +26,8 @@ let devicesData = new Map();
 let extensionEnabled = false;
 let extensionFirstEnable = true;
 let extensionInitComplete = false;
-let extensionPath = null;
 let isVisible = false;
+let Me = null; // extensionObject
 let panelButton = null;
 let panelBaloon = null;
 let storage = null;
@@ -91,7 +91,7 @@ function showInfo() {
             style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            gicon: Gio.icon_new_for_string(extensionPath + '/icons/android-white.svg'),
+            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-white.svg'),
         }));
         menuLayout.add_child(new St.Icon({
             style_class: 'system-status-icon',
@@ -228,8 +228,8 @@ export default class AdbBatteryInfoExtension extends Extension {
         let childPid = null;
         super(metadata);
         adbShell = new AdbShell();
-        extensionPath = this.path
-        storage = new ReferenceStorage();
+        Me = this
+        storage = new ReferenceStorage(this);
         // start adb daemon
         try {
             [ok, childPid] = adbShell.init();
@@ -242,7 +242,7 @@ export default class AdbBatteryInfoExtension extends Extension {
             extensionInitComplete = true;
         }
         if (extensionInitComplete) {
-            console.log('[ADB-battery-information] --- Init from "%s" ---', extensionPath);
+            console.log('[ADB-battery-information] --- Init from "%s" ---', Me.path);
         }
     }
 
@@ -279,9 +279,9 @@ export default class AdbBatteryInfoExtension extends Extension {
             return;
         }
         hideInfo();
-    /*
+/*
         stopDataCollector();
-    */
+*/
         extensionEnabled = false;
         console.log('[ADB-battery-information] --- Disable ---');
     }
