@@ -170,25 +170,47 @@ function dataCollectorStep() {
             }
             let level = devicesData.get(deviceId).prevBatteryLevel;
             let _item = new PopupMenu.PopupBaseMenuItem();
-            let _icon_str = '. GThemedIcon ';
+            let _detail = '';
+            let _common = '';
             if (level == 100) {
-                _icon_str = _icon_str + 'battery-full-charged-symbolic';
+                _common = 'battery-full-charged-symbolic battery-full-symbolic';
             } else if (level > 90) {
-                _icon_str = _icon_str + 'battery-full-charging-symbolic battery-full-symbolic';
+                _detail = 'battery-level-90-charging-symbolic';
+                _common = 'battery-full-charging-symbolic battery-full-symbolic';
+            } else if (level > 80) {
+                _detail = 'battery-level-80-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 70) {
+                _detail = 'battery-level-70-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 60) {
+                _detail = 'battery-level-60-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 50) {
+                _detail = 'battery-level-50-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 40) {
+                _detail = 'battery-level-40-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 30) {
+                _detail = 'battery-level-30-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
             } else if (level > 20) {
-                _icon_str = _icon_str + 'battery-good-charging-symbolic battery-good-symbolic';
-            } else if (level > 14) {
-                _icon_str = _icon_str + 'battery-low-charging-symbolic battery-low-symbolic';
+                _detail = 'battery-level-20-charging-symbolic';
+                _common = 'battery-good-charging-symbolic battery-good-symbolic';
+            } else if (level > 10) {
+                _detail = 'battery-level-10-charging-symbolic';
+                _common = 'battery-low-charging-symbolic battery-low-symbolic';
             } else if (level > 0) {
-                _icon_str = _icon_str + 'battery-caution-charging-symbolic battery-caution-symbolic';
+                _common = 'battery-caution-charging-symbolic battery-caution-symbolic';
             } else if (level == 0) {
-                _icon_str = _icon_str + 'battery-empty-symbolic';
+                _common = 'battery-empty-charging-symbolic';
             } else { // -1
-                _icon_str = _icon_str + 'battery-missing-symbolic';
+                _common = 'battery-missing-symbolic';
             }
             _item.add_child(new St.Icon({
                 style_class: 'popup-menu-icon',
-                gicon: Gio.icon_new_for_string(_icon_str),
+                gicon: Gio.icon_new_for_string('. GThemedIcon ' + _detail + ' ' + _common),
             }));
             _item.add_child(new St.Label({
                 text: info == '' ? deviceId + ': ' + _('no info') : info,
