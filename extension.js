@@ -91,13 +91,13 @@ function showInfo() {
             style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-white.svg'),
+            gicon: Gio.icon_new_for_string('. GThemedIcon ac-adapter-symbolic'),
         }));
         menuLayout.add_child(new St.Icon({
             style_class: 'system-status-icon',
             x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
-            gicon: Gio.icon_new_for_string('. GThemedIcon ac-adapter-symbolic'),
+            gicon: Gio.icon_new_for_string(Me.path + '/icons/android-white.svg'),
         }));
         panelBaloon = new PanelMenuBaloon(
             menuLayout,
