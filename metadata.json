@@ -4,7 +4,8 @@
   "shell-version": [
     "45",
     "46",
-    "47"
+    "47",
+    "48"
   ],
   "gettext-domain": "adb_bp@gnome_extensions.github.com",
   "url": "https://github.com/ilihydrogen/ADB-battery-information",
